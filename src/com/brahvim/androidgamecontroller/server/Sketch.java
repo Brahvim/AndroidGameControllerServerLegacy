@@ -8,11 +8,10 @@ import java.awt.MouseInfo;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -28,10 +27,13 @@ import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PVector;
+import uibooster.UiBooster;
+import uibooster.model.UiBoosterOptions;
 
 public class Sketch extends PApplet {
     // #region Fields.
     public final static ArrayList<Sketch> SKETCHES = new ArrayList<>(1);
+    public final static UiBooster UI = new UiBooster(UiBoosterOptions.Theme.DARK_THEME);
 
     public final static int REFRESH_RATE = GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getScreenDevices()[0].getDisplayMode().getRefreshRate();
@@ -68,11 +70,17 @@ public class Sketch extends PApplet {
     // #region `private` and `protected` Fields.
     protected Scene currentScene;
     protected PGraphics gr;
+    protected boolean agcExitCalled;
     // #endregion
     // #endregion Instance fields.
     // #endregion Fields.
 
+    public Sketch() {
+        Sketch.SKETCHES.add(this);
+    }
+
     // #region Scenes.
+    // #region Scene methods.
     public Scene getScene() {
         return this.currentScene;
     }
@@ -81,6 +89,7 @@ public class Sketch extends PApplet {
         p_scene.setup();
         this.currentScene = p_scene;
     }
+    // #endregion
 
     public final Scene awaitingConnectionsScene, workScene, exitScene;
 
@@ -92,6 +101,13 @@ public class Sketch extends PApplet {
                 gr.textSize(28);
                 gr.text(StringTable.getString("AwaitingConnectionsScene.text"),
                         cx + sin(millis() * 0.001f) * 25, cy);
+            }
+
+            @Override
+            public void mouseClicked() {
+                if (mouseButton == MouseEvent.BUTTON3) {
+                    Forms.SETTINGS.show();
+                }
             }
         };
 
@@ -174,6 +190,14 @@ public class Sketch extends PApplet {
         System.out.printf("Welcome to AndroidGameController `%s`!\n",
                 AgcSettings.getSetting("version"));
 
+        this.sketchFrame = this.createSketchPanel(new Runnable() {
+            @Override
+            public void run() {
+                // Don't fear the `SKETCH`! It's not bad code!
+                SKETCH.agcExit();
+            }
+        }, this, this.gr = createGraphics(width, height));
+
         super.registerMethod("pre", this);
         super.registerMethod("post", this);
 
@@ -188,14 +212,6 @@ public class Sketch extends PApplet {
 
         super.frameRate(Sketch.REFRESH_RATE);
         super.surface.setAlwaysOnTop(true);
-
-        this.sketchFrame = this.createSketchPanel(new Runnable() {
-            @Override
-            public void run() {
-                // Don't fear the `SKETCH`! It's not bad code!
-                SKETCH.agcExit();
-            }
-        }, this, this.gr = createGraphics(width, height));
     }
 
     public void pre() {
@@ -271,8 +287,18 @@ public class Sketch extends PApplet {
     }
 
     public void agcExit() {
+        if (this.agcExitCalled)
+            return;
+        this.agcExitCalled = true;
+
         System.out.println("AGC exits!");
         this.setScene(this.exitScene);
+    }
+
+    public static void allExit() {
+        for (Sketch s : Sketch.SKETCHES) {
+            s.agcExit();
+        }
     }
 
     public void onReceive(byte[] p_data, String p_ip, int p_port) {
@@ -386,41 +412,12 @@ public class Sketch extends PApplet {
         ret.setLayout(null);
         ret.addNotify();
 
-        ret.addWindowListener(new WindowListener() {
+        ret.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent p_event) {
                 System.out.println("Window closing...");
                 p_sketch.agcExit();
             }
-
-            // #region Unused...
-            // Never called!:
-            @Override
-            public void windowClosed(WindowEvent p_event) {
-                // System.out.println("Window CLOSED.");
-                // Sketch.agcExit();
-            }
-
-            @Override
-            public void windowOpened(WindowEvent p_event) {
-            }
-
-            @Override
-            public void windowIconified(WindowEvent p_event) {
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent p_event) {
-            }
-
-            @Override
-            public void windowActivated(WindowEvent p_event) {
-            }
-
-            @Override
-            public void windowDeactivated(WindowEvent p_event) {
-            }
-            // #endregion
         });
 
         // #region The `JPanel`:
@@ -443,15 +440,23 @@ public class Sketch extends PApplet {
 
         // Listeners for handling events :+1::
         panel.addMouseListener(new MouseAdapter() {
+            @Override
             public void mousePressed(MouseEvent p_mouseEvent) {
                 p_sketch.mousePressed = true;
                 p_sketch.mouseButton = p_mouseEvent.getButton();
                 p_sketch.mousePressed();
             }
 
+            @Override
             public void mouseReleased(MouseEvent p_mouseEvent) {
                 p_sketch.mousePressed = false;
                 p_sketch.mouseReleased();
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent p_mouseEvent) {
+                p_sketch.mouseButton = p_mouseEvent.getButton();
+                p_sketch.mouseClicked();
             }
         });
 
@@ -471,7 +476,7 @@ public class Sketch extends PApplet {
         });
 
         // For `keyPressed()`, `keyReleased()` and `keyTyped()`:
-        panel.addKeyListener(new KeyListener() {
+        panel.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent p_keyEvent) {
                 p_sketch.key = p_keyEvent.getKeyChar();

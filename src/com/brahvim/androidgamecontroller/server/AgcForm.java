@@ -8,19 +8,21 @@ import javax.swing.JDialog;
 import uibooster.model.Form;
 import uibooster.model.FormBuilder;
 
+@Deprecated
 public class AgcForm {
     protected FormBuilder build;
     protected Form form;
 
-    public void start(boolean p_block) {
+    public void show() {
         this.build = this.setup();
-
-        if (p_block) {
-            this.form = this.build.show();
-        } else {
-            this.form = this.build.run();
-        }
         this.becomeRich();
+        this.form = this.build.run();
+    }
+
+    public void showBlocking() {
+        this.build = this.setup();
+        this.becomeRich();
+        this.form = this.build.show();
     }
 
     public void becomeRich() {
