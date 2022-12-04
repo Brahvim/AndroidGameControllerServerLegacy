@@ -310,6 +310,7 @@ public class AgcServerSocket extends UdpSocket {
     // #region Overrides.
     @Override
     public void onReceive(@NotNull byte[] p_data, String p_ip, int p_port) {
+        System.out.println("Recieved something!");
         System.out.println(new String(p_data));
         for (Sketch s : Sketch.SKETCHES)
             s.onReceive(p_data, p_ip, p_port);

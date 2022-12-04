@@ -1,8 +1,5 @@
 package com.brahvim.androidgamecontroller.serial.configs;
 
-import com.brahvim.androidgamecontroller.serial.ButtonShape;
-import com.brahvim.androidgamecontroller.serial.DpadDirection;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -10,6 +7,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
+
+import com.brahvim.androidgamecontroller.serial.ButtonShape;
+import com.brahvim.androidgamecontroller.serial.DpadDirection;
 
 import processing.core.PVector;
 
