@@ -25,7 +25,6 @@ import com.brahvim.androidgamecontroller.SineWave;
 import processing.awt.PSurfaceAWT;
 import processing.core.PApplet;
 import processing.core.PConstants;
-import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PVector;
@@ -66,9 +65,9 @@ public class Sketch extends PApplet {
     // #endregion
     // #endregion
 
-    // #region `private` Fields.
-    private Scene currentScene;
-    private PGraphics gr;
+    // #region `private` and `protected` Fields.
+    protected Scene currentScene;
+    protected PGraphics gr;
     // #endregion
     // #endregion Instance fields.
     // #endregion Fields.

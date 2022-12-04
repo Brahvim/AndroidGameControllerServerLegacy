@@ -1,11 +1,40 @@
 package com.brahvim.androidgamecontroller.server;
 
-import uibooster.UiBooster;
-import uibooster.model.UiBoosterOptions;
+import uibooster.model.FormBuilder;
 
-public class Forms {
-    public static UiBooster ui = new UiBooster(UiBoosterOptions.Theme.DARK_THEME);
+public enum Forms {
+    SETTINGS(new AgcForm() {
+        public FormBuilder setup() {
+            return null;
+        };
+    }),
 
-    
+    NEW_CONNECTION(new AgcForm() {
+        public FormBuilder setup() {
+            return null;
+        };
+    }),
 
+    BANS(new AgcForm() {
+        public FormBuilder setup() {
+            return null;
+        };
+    }),
+
+    UNBAN(new AgcForm() {
+        public FormBuilder setup() {
+            return null;
+        };
+    });
+
+    private AgcForm form;
+
+    // Apparently these are `private` by default.
+    /* private */ Forms(AgcForm p_form) {
+        this.form = p_form;
+    }
+
+    public AgcForm getInstance() {
+        return this.form;
+    }
 }
