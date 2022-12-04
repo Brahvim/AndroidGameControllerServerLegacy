@@ -1,80 +1,82 @@
 package com.brahvim.androidgamecontroller.server;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 
 public class AgcSettings {
-    private static HashMap<String, String> table = new HashMap<>();
+    private static HashMap<String, String> table;
+    public static File settingsFile;
 
-    private static HashMap<String, String> parseTable(String p_fileName) {
-        HashMap<String, String> parsedMap = new HashMap<>();
-        File tableFile = new File("data", p_fileName);
-
-        if (tableFile.exists()) {
-            System.out.println("Found settings file!");
-            try (BufferedReader reader = new BufferedReader(new FileReader(tableFile))) {
-                String section = null, content = null;
-                StringBuilder parsedContent;
-                int eqPos = 0, lineLen = 0, newLineCharPos = 0;
-
-                // Remember that this loop goes through EACH LINE!
-                // Not each *character!* :joy::
-                for (String line; (line = reader.readLine()) != null;) {
-                    lineLen = line.length();
-
-                    // Leave empty lines alone!:
-                    if (line.isBlank())
-                        continue;
-
-                    // Skipping comments and registering sections,
-                    // and skip this iteration if they exist:
-                    switch (line.charAt(0)) {
-                        case ';': // Semicolons are also comments in INI files, apparently!
-                        case '#':
-                            continue;
-                        case '[':
-                            section = line.substring(1, line.indexOf(']'));
-                            continue;
-                    }
-
-                    // Find where the `=` sign is!:
-                    eqPos = line.indexOf('=');
-                    content = line.substring(eqPos + 1, lineLen);
-
-                    // Parse out `\n`s!:
-                    parsedContent = new StringBuilder(content);
-
-                    while ((newLineCharPos = parsedContent.indexOf("\\n")) != -1) {
-                        // Causes an infinite loop, and I won't be writing `\n` anywhere, anyway:
-                        // if (parsedContent.charAt(newLineCharPos - 1) == '\\')
-                        // continue;
-
-                        for (int i = 0; i < 2; i++)
-                            parsedContent.deleteCharAt(newLineCharPos);
-                        parsedContent.insert(newLineCharPos, '\n');
-                    }
-
-                    // if (content.contains("<br>"))
-                    // content = content.replace("\\\\n", App.NEWLINE);
-
-                    parsedMap.put(
-                            // Format: `SectionName.propertyName`:
-                            section.concat(".")
-                                    .concat(line.substring(0, eqPos)),
-                            parsedContent.toString());
-                }
-            } catch (IOException e) {
-                System.out.println("Failed to read string table file!");
-                e.printStackTrace();
+    public static synchronized void refresh() {
+        // Search all files for the settings file:
+        for (File f : Sketch.DATA_DIR_FILES) {
+            String fileName = f.getName();
+            if (fileName.contains("AgcSettings_")) {
+                AgcSettings.settingsFile = f;
+                AgcSettings.table = AgcSettings.parseTable(fileName);
             }
         }
-        return parsedMap;
+        // System.out.println("settablelen");
+        // System.out.println(table.keySet().size());
+    }
+
+    // Singleton! No constructor...
+    // ...and yet I used `static` everywhere.
+    private AgcSettings() {
+    }
+
+    private static HashMap<String, String> parseTable(String p_fileName) {
+        File file = new File(Sketch.DATA_DIR, p_fileName);
+        HashMap<String, String> ret = new HashMap<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            int eqPos, numEnd;
+            for (String line; (line = reader.readLine()) != null;) {
+                if (line.isBlank()) // Need to handle this separately...
+                    continue;
+                if (line.charAt(0) == '#')
+                    continue;
+
+                eqPos = line.indexOf('=');
+                numEnd = line.indexOf('#');
+
+                if (numEnd == -1)
+                    numEnd = line.length();
+
+                ret.put(line.substring(0, eqPos),
+                        line.substring(eqPos + 1, numEnd));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ret;
+
+        // To revert values:
+        /*
+         * // Revert the `values` `HashMap` and store the reverted values into `keys`.
+         * // Too lazy to use `BiDiMap`/`BiMap`! :joy:
+         * // ...apparently it's from a library, "Guava". No. Please no.
+         * // // No more dependencies!
+         * // reversed = new HashMap<Integer, String>();
+         * 
+         * // for (Map.Entry<String, Integer> entry : values.entrySet())
+         * // reversed.put(entry.getValue(), entry.getKey());
+         */
     }
 
     public static synchronized String getSetting(String p_key) {
+        if (AgcSettings.table == null)
+            AgcSettings.refresh();
+
         String ret = AgcSettings.table.get(p_key);
 
         if (ret == null) {
@@ -83,6 +85,46 @@ public class AgcSettings {
         }
 
         return ret;
+    }
+
+    public static synchronized void set(String p_key, String p_value) {
+        if (AgcSettings.table == null)
+            AgcSettings.refresh();
+
+        // [https://stackoverflow.com/a/1625263/13951505]
+        String setting = p_key.concat("=").concat(p_value);
+        try {
+            Files.write(
+                    AgcSettings.settingsFile.toPath(),
+                    setting.getBytes(),
+                    StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static synchronized void set(String... p_settings) {
+        if (AgcSettings.table == null)
+            AgcSettings.refresh();
+
+        // [https://stackoverflow.com/a/1625263/13951505]
+        if ((p_settings.length & 1) != 0) {
+            throw new IllegalArgumentException(
+                    "The last key did not have a value! No settings written.");
+        }
+
+        try (FileWriter fw = new FileWriter("myfile.txt", true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter out = new PrintWriter(bw)) {
+
+            int maxLen = p_settings.length - 1;
+            for (int i = 0; i < maxLen; i++) {
+                out.printf("%s=%s", p_settings[i], p_settings[i + 1]);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

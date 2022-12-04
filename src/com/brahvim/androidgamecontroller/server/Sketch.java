@@ -13,31 +13,40 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
-import com.brahvim.androidgamecontroller.Scene;
+import com.brahvim.androidgamecontroller.SineWave;
 
 import processing.awt.PSurfaceAWT;
 import processing.core.PApplet;
+import processing.core.PConstants;
+import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PVector;
 
 public class Sketch extends PApplet {
-    public final static int AGC_WIDTH = 400, AGC_HEIGHT = 200;
+    // #region Fields.
     public final static ArrayList<Sketch> SKETCHES = new ArrayList<>(1);
+
     public final static int REFRESH_RATE = GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getScreenDevices()[0].getDisplayMode().getRefreshRate();
 
-    // #region Fields.
+    public final static File ROOT_DIR = new File("");
+    public final static File DATA_DIR = new File("data");
+    public final static File[] DATA_DIR_FILES = Sketch.DATA_DIR.listFiles();
+
+    public static PImage agcIcon;
+
+    // #region Instance fields.
     public final Color javaBgColor = new Color(0, 0, 0, 1);
     public final Sketch SKETCH = this;
     public int frameStartTime, pframeTime, frameTime;
-    public Scene currentScene;
 
     // #region Window coordinates and window states.
     public int bgColor = super.color(0, 150);
@@ -58,10 +67,84 @@ public class Sketch extends PApplet {
     // #endregion
 
     // #region `private` Fields.
-    private static PImage AGC_ICON;
+    private Scene currentScene;
     private PGraphics gr;
     // #endregion
+    // #endregion Instance fields.
     // #endregion Fields.
+
+    // #region Scenes.
+    public Scene getScene() {
+        return this.currentScene;
+    }
+
+    public void setScene(Scene p_scene) {
+        p_scene.setup();
+        this.currentScene = p_scene;
+    }
+
+    public final Scene awaitingConnectionsScene, workScene, exitScene;
+
+    {
+        awaitingConnectionsScene = new Scene() {
+            @Override
+            public void draw() {
+                gr.textAlign(PConstants.CENTER);
+                gr.textSize(28);
+                gr.text(StringTable.getString("AwaitingConnectionsScene.text"),
+                        cx + sin(millis() * 0.001f) * 25, cy);
+            }
+        };
+
+        exitScene = new Scene() {
+            SineWave fadeWave;
+
+            @Override
+            public void setup() {
+                this.fadeWave = new SineWave(SKETCH, 0.0008f);
+                this.fadeWave.zeroWhenInactive = true;
+                this.fadeWave.endWhenAngleIs(90);
+                this.fadeWave.start();
+
+                // AgcServerSocket.tellAllClients(RequestCode.SERVER_CLOSE);
+                AgcServerSocket.INSTANCE.close();
+            }
+
+            @Override
+            public void draw() {
+                if (fadeWave != null) {
+                    float wave = fadeWave.get();
+                    if (wave == 0) {
+                        fadeWave.end();
+
+                        // while (!Forms.isFormClosed(Forms.settingsForm))
+                        // ;
+                        delay(100);
+                        exit();
+                    } else {
+                        bgColor = color(0, abs(1 - wave) * 150);
+                    }
+                }
+
+                gr.textAlign(CENTER);
+                gr.textSize(28);
+                gr.fill(255, alpha(bgColor));
+                gr.text(StringTable.getString("ExitScene.text"), cx, qy);
+
+            }
+        };
+
+        workScene = new Scene() {
+            @Override
+            public void setup() {
+            }
+
+            @Override
+            public void draw() {
+            }
+        };
+    }
+    // #endregion
 
     public static void main(String[] p_args) {
         Sketch constructedSketch = new Sketch();
@@ -71,29 +154,41 @@ public class Sketch extends PApplet {
             PApplet.runSketch(args, constructedSketch);
         else
             PApplet.runSketch(PApplet.concat(p_args, args), constructedSketch);
+
+        synchronized (constructedSketch) {
+            Sketch.agcIcon = constructedSketch.loadImage(
+                    StringTable.getString("Meta.iconPath"));
+            synchronized (constructedSketch.awaitingConnectionsScene) {
+                constructedSketch.setScene(constructedSketch.awaitingConnectionsScene);
+            }
+        }
     }
 
     public void settings() {
-        super.size(Sketch.AGC_WIDTH, Sketch.AGC_HEIGHT);
+        super.size(
+                Integer.parseInt(AgcSettings.getSetting("defaultWidth")),
+                Integer.parseInt(AgcSettings.getSetting("defaultHeight")));
     }
 
     @Override
     public void setup() {
-        System.out.printf("");
+        System.out.printf("Welcome to AndroidGameController `%s`!\n",
+                AgcSettings.getSetting("version"));
 
         super.registerMethod("pre", this);
         super.registerMethod("post", this);
 
         super.surface.setTitle(StringTable.getString("Meta.winTitle"));
         super.surface.setIcon(
-                Sketch.AGC_ICON = Sketch.AGC_ICON == null
+                Sketch.agcIcon = Sketch.agcIcon == null
                         ? this.loadImage(StringTable.getString("Meta.iconPath"))
-                        : Sketch.AGC_ICON);
+                        : Sketch.agcIcon);
 
         this.minExtent = new PVector(0, 0);
         this.maxExtent = new PVector(displayWidth - width, displayHeight - height);
 
         super.frameRate(Sketch.REFRESH_RATE);
+        super.surface.setAlwaysOnTop(true);
 
         this.sketchFrame = this.createSketchPanel(new Runnable() {
             @Override
@@ -105,13 +200,15 @@ public class Sketch extends PApplet {
     }
 
     public void pre() {
+        if (!(this.pwidth == super.width || this.pheight == super.height))
+            this.updateRatios();
     }
 
     @Override
     public void draw() {
-        frameStartTime = millis(); // Timestamp.
-        frameTime = frameStartTime - pframeTime;
-        pframeTime = frameStartTime;
+        this.frameStartTime = super.millis(); // Timestamp.
+        this.frameTime = this.frameStartTime - this.pframeTime;
+        this.pframeTime = this.frameStartTime;
 
         // #region Window dragging logic.
         pwinMouseX = winMouseX;
@@ -148,20 +245,35 @@ public class Sketch extends PApplet {
         this.sketchFrame.setBackground(this.javaBgColor);
 
         this.gr.beginDraw();
-        this.gr.background(bgColor);
+        this.gr.background(this.bgColor);
+
+        super.pushMatrix();
+        super.pushStyle();
+
+        this.gr.pushMatrix();
+        this.gr.pushStyle();
 
         if (this.currentScene != null)
             if (this.currentScene != null)
                 this.currentScene.draw();
 
+        this.gr.popMatrix();
+        this.gr.popStyle();
+
+        super.popMatrix();
+        super.popStyle();
+
         this.gr.endDraw();
     }
 
     public void post() {
+        this.pwidth = super.width;
+        this.pheight = super.height;
     }
 
     public void agcExit() {
         System.out.println("AGC exits!");
+        this.setScene(this.exitScene);
     }
 
     public void onReceive(byte[] p_data, String p_ip, int p_port) {
@@ -243,6 +355,28 @@ public class Sketch extends PApplet {
     // #endregion
 
     // #region Extras.
+    public void updateRatios() {
+        cx = width * 0.5f;
+        cy = height * 0.5f;
+        qx = cx * 0.5f;
+        qy = cy * 0.5f;
+        q3x = cx + qx;
+        q3y = cy + qy;
+    }
+
+    /*
+     * public void myDefaultStyleSettings(PGraphics p_gr) {
+     * p_gr.fill(255);
+     * p_gr.stroke(0);
+     * 
+     * p_gr.strokeWeight(1);
+     * p_gr.strokeCap(PConstants.PROJECT);
+     * p_gr.strokeJoin(PConstants.ROUND);
+     * 
+     * // p_gr.textAlign(PConstants., ALT);
+     * }
+     */
+
     public JFrame createSketchPanel(Runnable p_exitTask,
             Sketch p_sketch, PGraphics p_sketchGraphics) {
         // This is the dummy variable from Processing.
@@ -372,15 +506,14 @@ public class Sketch extends PApplet {
             boolean exited;
 
             public void keyPressed(KeyEvent p_keyEvent) {
-                if (this.exited)
-                    return;
 
                 if (KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.ALT_DOWN_MASK) != null
                         && p_keyEvent.getKeyCode() == KeyEvent.VK_F4) {
                     // Apparently this wasn't the cause of an error I was trying to rectify.
                     // However, it *still is a good practice!*
                     if (!p_sketch.exitCalled()) {
-                        p_exitTask.run();
+                        if (!this.exited)
+                            p_exitTask.run();
                         this.exited = true;
                         p_keyEvent.consume();
                     }

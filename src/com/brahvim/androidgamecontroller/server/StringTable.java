@@ -7,8 +7,21 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class StringTable {
-    private static HashMap<String, String> table = StringTable
-            .parseTable("AgcStringTable.ini");
+    private static HashMap<String, String> table;
+    public static File stringFile;
+
+    public static synchronized void refresh() {
+        // Search all files for the string table file:
+        for (File f : Sketch.DATA_DIR_FILES) {
+            String fileName = f.getName();
+            if (fileName.contains("AgcStringTable_")) {
+                StringTable.stringFile = f;
+                StringTable.table = StringTable.parseTable(fileName);
+            }
+        }
+        // System.out.println("strtablelen");
+        // System.out.println(table.keySet().size());
+    }
 
     // Singleton! No constructor...
     // ...and yet I used `static` everywhere.
@@ -20,7 +33,7 @@ public class StringTable {
         File tableFile = new File("data", p_fileName);
 
         if (tableFile.exists()) {
-            System.out.println("Found string table file!");
+            // System.out.println("Found string table file!");
             try (BufferedReader reader = new BufferedReader(new FileReader(tableFile))) {
                 String section = null, content = null;
                 StringBuilder parsedContent;
@@ -81,6 +94,9 @@ public class StringTable {
     }
 
     public static synchronized String getString(String p_key) {
+        if (StringTable.table == null)
+            StringTable.refresh();
+
         String ret = StringTable.table.get(p_key);
 
         if (ret == null) {

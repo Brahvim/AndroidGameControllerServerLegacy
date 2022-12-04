@@ -1,4 +1,4 @@
-package com.brahvim.androidgamecontroller;
+package com.brahvim.androidgamecontroller.server;
 
 import java.util.ArrayList;
 

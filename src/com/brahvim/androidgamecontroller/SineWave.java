@@ -1,6 +1,8 @@
-package com.brahvim.androidgamecontroller.server;
+package com.brahvim.androidgamecontroller;
 
-class SineWave {
+import com.brahvim.androidgamecontroller.server.Sketch;
+
+public class SineWave {
     // #region Fields.
     public float angleOffset, freqMult, freq;
     public float endTime = Float.MAX_VALUE - 1, aliveTime;
