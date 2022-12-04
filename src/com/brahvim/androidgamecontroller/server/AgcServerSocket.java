@@ -310,18 +310,14 @@ public class AgcServerSocket extends UdpSocket {
     // #region Overrides.
     @Override
     public void onReceive(@NotNull byte[] p_data, String p_ip, int p_port) {
-        // Sketch.currentScene.onReceive(p_data, p_ip, p_port);
-
-        // if (Sketch.socket != null)
-        // if (Sketch.socket.clients != null)
-        // for (AgcClient c : Sketch.socket.clients)
-        // if (c.window != null)
-        // c.window.onReceive(p_data, p_ip, p_port);
+        System.out.println(new String(p_data));
+        for (Sketch s : Sketch.SKETCHES)
+            s.onReceive(p_data, p_ip, p_port);
     }
 
     @Override
     protected void onStart() {
-        // this.setPort(RequestCodes.get("SERVER_PORT"));
+        // super.setPort(RequestCodes.get("SERVER_PORT"));
         System.out.println("The socket has begun, boiiii!");
         System.out.printf("Socket-Stats!:\n\t- IP: `%s`\n\t- Port: `%d`\n", super.getIp(), super.getPort());
     }

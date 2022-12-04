@@ -5,17 +5,15 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.JDialog;
 
-import uibooster.UiBooster;
 import uibooster.model.Form;
 import uibooster.model.FormBuilder;
-import uibooster.model.UiBoosterOptions;
 
 public enum Forms {
     SETTINGS(Sketch.UI.createForm(StringTable.getString("SettingsForm.title"))
             .addButton(StringTable.getString("SettingsForm.exitButton"), new Runnable() {
                 public void run() {
                     System.out.println("Exit button pressed!");
-                    Sketch.allExit();
+                    Sketch.agcExit();
                 };
             }));
 

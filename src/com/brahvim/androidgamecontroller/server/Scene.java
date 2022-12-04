@@ -9,7 +9,7 @@ public class Scene {
         Scene.SCENES.add(this);
     }
 
-    // region Application callback structure.
+    // #region Application callback structure.
     public void setup() {
     }
 
@@ -22,12 +22,11 @@ public class Scene {
     public void post() {
     }
 
-    // @SuppressWarnings("unused")
     public void onReceive(byte[] p_data, String p_ip, int p_port) {
     }
-    // endregion
+    // #endregion
 
-    // region Mouse events.
+    // #region Mouse events.
     public void mousePressed() {
     }
 
@@ -53,7 +52,7 @@ public class Scene {
     }
     // endregion
 
-    // region Keyboard events.
+    // #region Keyboard events.
     public void keyPressed() {
     }
 
@@ -62,6 +61,6 @@ public class Scene {
 
     public void keyReleased() {
     }
-    // endregion
+    // #endregion
 
 }

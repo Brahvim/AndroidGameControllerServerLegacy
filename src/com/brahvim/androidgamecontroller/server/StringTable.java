@@ -28,7 +28,7 @@ public class StringTable {
     private StringTable() {
     }
 
-    public static HashMap<String, String> parseTable /* parseStringTableFromFile */ (String p_fileName) {
+    public static HashMap<String, String> parseTable(String p_fileName) {
         HashMap<String, String> parsedMap = new HashMap<>();
         File tableFile = new File("data", p_fileName);
 

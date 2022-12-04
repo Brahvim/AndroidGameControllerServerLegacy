@@ -91,9 +91,6 @@ public enum RequestCode {
     // endregion
 
     // region Non-Enum Fields.
-    public static final String CLIENT_CURRENT_VERSION = "v1.0.0";
-    public static final String SERVER_CURRENT_VERSION = "v1.0.0";
-
     /**
      * The port that AGC servers are always on.
      */

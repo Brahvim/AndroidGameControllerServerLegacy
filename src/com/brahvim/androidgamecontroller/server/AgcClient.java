@@ -6,10 +6,10 @@ public class AgcClient {
     /**
      * The configuration of buttons for this client.
      */
-    @SuppressWarnings("unused")
     private AgcConfigurationPacket config;
 
     private String ip;
+    private int port;
 
     /**
      * The manufacturer-assigned name of the device as reported by
@@ -17,14 +17,13 @@ public class AgcClient {
      */
     private String deviceName;
 
-    private int port;
-
     public AgcClient(String p_ip, int p_port, String p_deviceName) {
         this.ip = p_ip;
         this.port = p_port;
         this.deviceName = p_deviceName;
     }
 
+    // #region Getters.
     /**
      * @return The IPv4 address of the device.
      */
@@ -33,7 +32,7 @@ public class AgcClient {
     }
 
     public int getPort() {
-        return port;
+        return this.port;
     }
 
     /**
@@ -43,5 +42,10 @@ public class AgcClient {
     public String getDeviceName() {
         return this.deviceName;
     }
+
+    public AgcConfigurationPacket getConfig() {
+        return this.config;
+    }
+    // #endregion
 
 };

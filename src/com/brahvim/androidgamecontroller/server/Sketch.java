@@ -13,6 +13,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -20,6 +21,11 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 import com.brahvim.androidgamecontroller.SineWave;
+import com.brahvim.androidgamecontroller.serial.states.ButtonState;
+import com.brahvim.androidgamecontroller.serial.states.DpadButtonState;
+import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
+import com.brahvim.androidgamecontroller.serial.states.ThumbstickState;
+import com.brahvim.androidgamecontroller.serial.states.TouchpadState;
 
 import processing.awt.PSurfaceAWT;
 import processing.core.PApplet;
@@ -49,6 +55,16 @@ public class Sketch extends PApplet {
     public final Sketch SKETCH = this;
     public int frameStartTime, pframeTime, frameTime;
 
+    // #region Controller UI related.
+    public AgcClient client;
+
+    private ArrayList<ButtonState> buttonStates;
+    private ArrayList<DpadButtonState> dpadButtonStates;
+    private ArrayList<ThumbstickState> thumbstickStates;
+    private ArrayList<TouchpadState> touchpadStates;
+    private KeyboardState keyboardState;
+    // #endregion Controller UI related.
+
     // #region Window coordinates and window states.
     public int bgColor = super.color(0, 150);
     public PVector minExtent, maxExtent;
@@ -64,20 +80,16 @@ public class Sketch extends PApplet {
     public int winMouseX, winMouseY;
     public int surfaceX, surfaceY; // Used to constrain the position of the overlay.
     public int pmousePressX, pmousePressY; // Where was the mouse when it was last clicked?
-    // #endregion
-    // #endregion
+    // #endregion Ma'h boilerplate :D
+    // #endregion Window coordinates and window states.
 
-    // #region `private` and `protected` Fields.
+    // #region `private` and `protected` fields.
     protected Scene currentScene;
     protected PGraphics gr;
     protected boolean agcExitCalled;
-    // #endregion
+    // #endregion `private` and `protected` fields.
     // #endregion Instance fields.
     // #endregion Fields.
-
-    public Sketch() {
-        Sketch.SKETCHES.add(this);
-    }
 
     // #region Scenes.
     // #region Scene methods.
@@ -161,6 +173,10 @@ public class Sketch extends PApplet {
     }
     // #endregion
 
+    public Sketch() {
+        Sketch.SKETCHES.add(this);
+    }
+
     public static void main(String[] p_args) {
         Sketch constructedSketch = new Sketch();
         String[] args = new String[] { constructedSketch.getClass().getName() };
@@ -193,8 +209,7 @@ public class Sketch extends PApplet {
         this.sketchFrame = this.createSketchPanel(new Runnable() {
             @Override
             public void run() {
-                // Don't fear the `SKETCH`! It's not bad code!
-                SKETCH.agcExit();
+                Sketch.agcExit();
             }
         }, this, this.gr = createGraphics(width, height));
 
@@ -286,7 +301,7 @@ public class Sketch extends PApplet {
         this.pheight = super.height;
     }
 
-    public void agcExit() {
+    private void myExit() {
         if (this.agcExitCalled)
             return;
         this.agcExitCalled = true;
@@ -295,9 +310,12 @@ public class Sketch extends PApplet {
         this.setScene(this.exitScene);
     }
 
-    public static void allExit() {
+    public static void agcExit() {
+        for (Forms f : Forms.values())
+            f.closeForm();
+
         for (Sketch s : Sketch.SKETCHES) {
-            s.agcExit();
+            s.myExit();
         }
     }
 
@@ -416,7 +434,7 @@ public class Sketch extends PApplet {
             @Override
             public void windowClosing(WindowEvent p_event) {
                 System.out.println("Window closing...");
-                p_sketch.agcExit();
+                Sketch.agcExit();
             }
         });
 
