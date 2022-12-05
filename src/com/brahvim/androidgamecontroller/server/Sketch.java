@@ -26,6 +26,7 @@ import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
 import com.brahvim.androidgamecontroller.serial.states.ThumbstickState;
 import com.brahvim.androidgamecontroller.serial.states.TouchpadState;
 import com.brahvim.androidgamecontroller.server.forms.AgcForm;
+import com.brahvim.androidgamecontroller.server.forms.BanRequestForm;
 import com.brahvim.androidgamecontroller.server.forms.NewConnectionForm;
 import com.brahvim.androidgamecontroller.server.forms.SettingsForm;
 
@@ -35,8 +36,6 @@ import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PVector;
-import uibooster.UiBooster;
-import uibooster.model.UiBoosterOptions;
 
 public class Sketch extends PApplet {
     // #region Fields.
@@ -108,6 +107,7 @@ public class Sketch extends PApplet {
 
     {
         awaitingConnectionsScene = new Scene() {
+
             @Override
             public void draw() {
                 gr.textAlign(PConstants.CENTER);
@@ -138,14 +138,15 @@ public class Sketch extends PApplet {
                             AgcClient toAdd = new AgcClient(p_ip, p_port,
                                     new String(RequestCode.getPacketExtras(p_data)));
 
-                            // If the client wasn't banned, and isn't already in our list,
-                            if (!(AgcServerSocket.getInstance().isClientBanned(toAdd)
-                                    && AgcServerSocket.getInstance().getClients().contains(toAdd)))
+                            if (AgcServerSocket.getInstance().isClientBanned(toAdd))
+                                return;
+
+                            // If the client isn't already in our list,
+                            if (!AgcServerSocket.getInstance().hasClient(toAdd))
                                 if (!NewConnectionForm.noMorePings) {
-                                    NewConnectionForm.noMorePings = true;
                                     new Thread() {
                                         public void run() {
-                                            new NewConnectionForm(toAdd).show();
+                                            NewConnectionForm.build(toAdd).show();
                                         };
                                     }.start();
                                 }
@@ -190,7 +191,6 @@ public class Sketch extends PApplet {
                 gr.textSize(28);
                 gr.fill(255, alpha(bgColor));
                 gr.text(StringTable.getString("ExitScene.text"), cx, qy);
-
             }
         };
 

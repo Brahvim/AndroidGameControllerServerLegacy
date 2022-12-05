@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class Scene {
     public final static ArrayList<Scene> SCENES = new ArrayList<Scene>(3);
+    private final Scene SCENE = this;
 
     public Scene() {
         Scene.SCENES.add(this);

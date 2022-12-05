@@ -61,6 +61,10 @@ public class AgcServerSocket extends UdpSocket {
             this.clients.add(p_client);
     }
 
+    public boolean hasClient(AgcClient p_client) {
+        return this.clients.contains(p_client);
+    }
+
     public void removeClient(String p_ip) {
         // Section `3.1` on: [https://www.baeldung.com/java-list-iterate-backwards].
 
@@ -86,7 +90,7 @@ public class AgcServerSocket extends UdpSocket {
             }
     }
 
-    public void banClient(String p_ip) {
+    public void banClient(String p_ip, int p_port) {
         AgcClient client = null;
 
         String clientName = "";
@@ -107,10 +111,13 @@ public class AgcServerSocket extends UdpSocket {
         if (clientPort == -1)
             throw new RuntimeException("WHAT?!");
 
+        this.sendCode(RequestCode.CLIENT_WAS_BANNED, p_ip, p_port);
         this.bannedClients.add(new AgcClient(p_ip, clientPort, clientName));
     }
 
     public void banClient(AgcClient p_client) {
+        this.sendCode(RequestCode.CLIENT_WAS_BANNED, p_client);
+
         this.clients.remove(p_client);
         this.bannedClients.add(p_client);
     }

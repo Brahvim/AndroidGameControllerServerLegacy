@@ -2,6 +2,8 @@ package com.brahvim.androidgamecontroller.server.forms;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
 import javax.swing.JDialog;
@@ -19,7 +21,7 @@ public class AgcForm {
     public final static ArrayList<AgcForm> VISIBLE_FORMS = new ArrayList<>(4);
 
     private FormBuilder build;
-    protected Form form;
+    private Form form;
 
     public AgcForm(FormBuilder p_build) {
         this.build = p_build;
@@ -35,8 +37,8 @@ public class AgcForm {
         this.makeFormRich();
 
         AgcForm.VISIBLE_FORMS.add(this);
-        this.onShow();
-        this.onVisible();
+        this.onShow(this.form);
+        this.onVisible(this.form);
         return this.form;
     }
 
@@ -49,13 +51,14 @@ public class AgcForm {
         this.makeFormRich();
 
         AgcForm.VISIBLE_FORMS.remove(this);
-        this.onBlockingShow();
-        this.onVisible();
+        this.onBlockingShow(this.form);
+        this.onVisible(this.form);
         return this.form;
     }
 
     // Can't be overriden since it's `private`!
     private void makeFormRich() {
+        final AgcForm AGC_FORM = this;
         final Form FORM = this.form;
         final JDialog WIN = this.form.getWindow();
 
@@ -65,6 +68,13 @@ public class AgcForm {
                 if (p_keyEvent.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     FORM.close();
                 }
+            }
+        });
+
+        WIN.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent p_windowEvent) {
+                AGC_FORM.onClose();
             }
         });
     }
@@ -84,13 +94,13 @@ public class AgcForm {
     }
 
     // #region Callbacks!~
-    protected void onVisible() {
+    protected void onVisible(Form p_form) {
     }
 
-    protected void onShow() {
+    protected void onShow(Form p_form) {
     }
 
-    protected void onBlockingShow() {
+    protected void onBlockingShow(Form p_form) {
     }
 
     protected void onClose() {
