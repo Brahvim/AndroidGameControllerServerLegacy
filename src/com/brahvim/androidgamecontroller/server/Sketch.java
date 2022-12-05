@@ -26,6 +26,7 @@ import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
 import com.brahvim.androidgamecontroller.serial.states.ThumbstickState;
 import com.brahvim.androidgamecontroller.serial.states.TouchpadState;
 import com.brahvim.androidgamecontroller.server.forms.AgcForm;
+import com.brahvim.androidgamecontroller.server.forms.NewConnectionForm;
 import com.brahvim.androidgamecontroller.server.forms.SettingsForm;
 
 import processing.awt.PSurfaceAWT;
@@ -40,7 +41,6 @@ import uibooster.model.UiBoosterOptions;
 public class Sketch extends PApplet {
     // #region Fields.
     public final static ArrayList<Sketch> SKETCHES = new ArrayList<>(1);
-    public final static UiBooster UI = new UiBooster(UiBoosterOptions.Theme.DARK_THEME);
 
     public final static int REFRESH_RATE = GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getScreenDevices()[0].getDisplayMode().getRefreshRate();
@@ -108,8 +108,6 @@ public class Sketch extends PApplet {
 
     {
         awaitingConnectionsScene = new Scene() {
-            boolean noMorePings;
-
             @Override
             public void draw() {
                 gr.textAlign(PConstants.CENTER);
@@ -140,8 +138,17 @@ public class Sketch extends PApplet {
                             AgcClient toAdd = new AgcClient(p_ip, p_port,
                                     new String(RequestCode.getPacketExtras(p_data)));
 
-                            // Forms.Data.lastClient = toAdd;
-                            // Forms.NEW_CONNECTION.showBlocking();
+                            // If the client wasn't banned, and isn't already in our list,
+                            if (!(AgcServerSocket.getInstance().isClientBanned(toAdd)
+                                    && AgcServerSocket.getInstance().getClients().contains(toAdd)))
+                                if (!NewConnectionForm.noMorePings) {
+                                    NewConnectionForm.noMorePings = true;
+                                    new Thread() {
+                                        public void run() {
+                                            new NewConnectionForm(toAdd).show();
+                                        };
+                                    }.start();
+                                }
                             break;
                         default:
                             System.out.println(new String(p_data));
