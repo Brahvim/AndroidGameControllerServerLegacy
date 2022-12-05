@@ -23,6 +23,37 @@ public class AgcClient {
         this.deviceName = p_deviceName;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object p_object) {
+        if (this == p_object) {
+            return true;
+        }
+
+        if (p_object == null) {
+            return false;
+        }
+
+        if (this.getClass() != p_object.getClass()) {
+            return false;
+        }
+
+        AgcClient theOtherClient = (AgcClient) p_object;
+        if (this.ip == null) {
+            if (theOtherClient.ip != null) {
+                return false;
+            }
+        } else if (!this.ip.equals(theOtherClient.ip)) {
+            return false;
+        }
+
+        return true;
+    }
+
     // #region Getters.
     /**
      * @return The IPv4 address of the device.
@@ -47,5 +78,9 @@ public class AgcClient {
         return this.config;
     }
     // #endregion
+
+    public void setConfig(AgcConfigurationPacket p_config) {
+        this.config = p_config;
+    }
 
 };

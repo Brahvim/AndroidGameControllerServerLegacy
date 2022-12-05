@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class Scene {
     public final static ArrayList<Scene> SCENES = new ArrayList<Scene>(3);
-    private final Scene SCENE = this;
+    // private final Scene SCENE = this;
 
     public Scene() {
         Scene.SCENES.add(this);
@@ -23,7 +23,7 @@ public class Scene {
     public void post() {
     }
 
-    public void onReceive(byte[] p_data, String p_ip, int p_port) {
+    public void onReceive(byte[] p_data, AgcClient p_client) {
     }
     // #endregion
 

@@ -20,13 +20,14 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 import com.brahvim.androidgamecontroller.RequestCode;
+import com.brahvim.androidgamecontroller.serial.ByteSerial;
+import com.brahvim.androidgamecontroller.serial.configs.AgcConfigurationPacket;
 import com.brahvim.androidgamecontroller.serial.states.ButtonState;
 import com.brahvim.androidgamecontroller.serial.states.DpadButtonState;
 import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
 import com.brahvim.androidgamecontroller.serial.states.ThumbstickState;
 import com.brahvim.androidgamecontroller.serial.states.TouchpadState;
 import com.brahvim.androidgamecontroller.server.forms.AgcForm;
-import com.brahvim.androidgamecontroller.server.forms.BanRequestForm;
 import com.brahvim.androidgamecontroller.server.forms.NewConnectionForm;
 import com.brahvim.androidgamecontroller.server.forms.SettingsForm;
 
@@ -130,34 +131,9 @@ public class Sketch extends PApplet {
                     SettingsForm.INSTANCE.show();
             }
 
-            @Override
-            public void onReceive(byte[] p_data, String p_ip, int p_port) {
-                if (RequestCode.packetHasCode(p_data)) {
-                    switch (RequestCode.fromReceivedPacket(p_data)) {
-                        case ADD_ME:
-                            AgcClient toAdd = new AgcClient(p_ip, p_port,
-                                    new String(RequestCode.getPacketExtras(p_data)));
-
-                            if (AgcServerSocket.getInstance().isClientBanned(toAdd))
-                                return;
-
-                            // If the client isn't already in our list,
-                            if (!AgcServerSocket.getInstance().hasClient(toAdd))
-                                if (!NewConnectionForm.noMorePings) {
-                                    new Thread() {
-                                        public void run() {
-                                            NewConnectionForm.build(toAdd).show();
-                                        };
-                                    }.start();
-                                }
-                            break;
-                        default:
-                            System.out.println(new String(p_data));
-                            break;
-                    }
-                }
-
-            }
+            // @Override
+            // public void onReceive(byte[] p_data, String p_ip, int p_port) {
+            // }
         };
 
         exitScene = new Scene() {
@@ -176,10 +152,10 @@ public class Sketch extends PApplet {
 
             @Override
             public void draw() {
-                if (fadeWave != null) {
-                    float wave = fadeWave.get();
+                if (this.fadeWave != null) {
+                    float wave = this.fadeWave.get();
                     if (wave == 0) {
-                        fadeWave.end();
+                        this.fadeWave.end();
                         delay(100);
                         exit();
                     } else {
@@ -197,17 +173,78 @@ public class Sketch extends PApplet {
         workScene = new Scene() {
             @Override
             public void setup() {
+                System.out.println("CONGRATULATIIIIIIONS! You made it to the WORK scene!");
+
+                buttonStates = new ArrayList<>();
+                dpadButtonStates = new ArrayList<>();
+                thumbstickStates = new ArrayList<>();
+                touchpadStates = new ArrayList<>();
+                keyboardState = new KeyboardState();
+
             }
 
             @Override
             public void draw() {
             }
+
+            @Override
+            public void onReceive(byte[] p_data, AgcClient p_client) {
+                if (RequestCode.packetHasCode(p_data)) {
+                    switch (RequestCode.fromReceivedPacket(p_data)) {
+                        
+                        default:
+                            break;
+                    }
+                } else { // Deserialize, compare using `controlNumber`, set!
+                    Object deserialized = ByteSerial.decode(p_data);
+
+                    if (deserialized instanceof ButtonState gotbuttonState) {
+                        for (int i = 0; i < buttonStates.size(); i++) {
+                            ButtonState s = buttonStates.get(i);
+                            if (s.controlNumber == gotbuttonState.controlNumber) {
+                                buttonStates.set(i, gotbuttonState);
+                            }
+                        }
+                    } else if (deserialized instanceof DpadButtonState gotDpadButtonState) {
+                        for (int i = 0; i < buttonStates.size(); i++) {
+                            DpadButtonState s = dpadButtonStates.get(i);
+                            if (s.controlNumber == gotDpadButtonState.controlNumber) {
+                                dpadButtonStates.set(i, gotDpadButtonState);
+                            }
+                        }
+                    } else if (deserialized instanceof ThumbstickState gotThumbstickState) {
+                        for (int i = 0; i < buttonStates.size(); i++) {
+                            ThumbstickState s = thumbstickStates.get(i);
+                            if (s.controlNumber == gotThumbstickState.controlNumber) {
+                                thumbstickStates.set(i, gotThumbstickState);
+                            }
+                        }
+                    } else if (deserialized instanceof TouchpadState gotTouchpadState) {
+                        for (int i = 0; i < buttonStates.size(); i++) {
+                            TouchpadState s = touchpadStates.get(i);
+                            if (s.controlNumber == gotTouchpadState.controlNumber) {
+                                touchpadStates.set(i, gotTouchpadState);
+                            }
+                        }
+                    } else if (deserialized instanceof KeyboardState gotKeyboardState) {
+                        keyboardState = gotKeyboardState;
+                    }
+
+                }
+
+            }
         };
     }
     // #endregion
 
+    // #region Constructors, `main()`, `settings()`...
     public Sketch() {
         Sketch.SKETCHES.add(this);
+    }
+
+    public Sketch(AgcClient p_client) {
+        this();
+        this.client = p_client;
     }
 
     public static void main(String[] p_args) {
@@ -225,17 +262,16 @@ public class Sketch extends PApplet {
                 AgcSettings.getSetting("version"));
     }
 
+    @Override
     public void settings() {
         super.size(
                 Integer.parseInt(AgcSettings.getSetting("defaultWidth")),
                 Integer.parseInt(AgcSettings.getSetting("defaultHeight")));
     }
+    // #endregion
 
     @Override
     public void setup() {
-        this.setScene(Sketch.SKETCHES.size() == 1
-                ? this.awaitingConnectionsScene
-                : this.workScene);
 
         this.sketchFrame = this.createSketchPanel(new Runnable() {
             @Override
@@ -257,6 +293,10 @@ public class Sketch extends PApplet {
 
         super.frameRate(Sketch.REFRESH_RATE);
         super.surface.setAlwaysOnTop(true);
+
+        this.setScene(Sketch.SKETCHES.size() == 1
+                ? this.awaitingConnectionsScene
+                : this.workScene);
     }
 
     public void pre() {
@@ -342,15 +382,66 @@ public class Sketch extends PApplet {
 
     public static void agcExit() {
         AgcForm.closeAllAgcForms();
+        AgcServerSocket.getInstance().tellAllClients(RequestCode.SERVER_CLOSE);
 
         for (Sketch s : Sketch.SKETCHES) {
             s.myExit();
         }
     }
 
+    public static Sketch createNewInstance(AgcClient p_client) {
+        Sketch sketch = new Sketch(p_client);
+        return sketch;
+    }
+
     public void onReceive(byte[] p_data, String p_ip, int p_port) {
+        AgcClient sender = new AgcClient(p_ip, p_port, new String(RequestCode.getPacketExtras(p_data)));
+
         if (this.currentScene != null)
-            this.currentScene.onReceive(p_data, p_ip, p_port);
+            if (currentScene == awaitingConnectionsScene)
+                ; // this.currentScene.onReceive(p_data, sender); return;
+            else if (currentScene == workScene) {
+                this.currentScene.onReceive(p_data, sender);
+                return;
+            } else if (currentScene == exitScene)
+                ;
+
+        if (RequestCode.packetHasCode(p_data)) {
+            switch (RequestCode.fromReceivedPacket(p_data)) {
+                case ADD_ME:
+                    if (AgcServerSocket.getInstance().isClientBanned(sender))
+                        return;
+
+                    // If the client isn't already in our list,
+                    if (!AgcServerSocket.getInstance().hasClient(sender))
+                        if (!NewConnectionForm.noMorePings) {
+                            new Thread() {
+                                public void run() {
+                                    NewConnectionForm.build(sender).show();
+                                };
+                            }.start();
+                        }
+                    break;
+
+                case CLIENT_SENDS_CONFIG:
+                    if (AgcServerSocket.getInstance().getClients().size() == 1) {
+                        Sketch sketch = Sketch.SKETCHES.get(0);
+                        sender.setConfig((AgcConfigurationPacket) ByteSerial.decode(
+                                RequestCode.getPacketExtras(p_data)));
+                        sketch.client = sender;
+                        sketch.setScene(sketch.workScene);
+                        return;
+                    }
+
+                    Sketch.createNewInstance(sender);
+                    break;
+
+                default:
+                    System.out.println(new String(p_data));
+                    break;
+            }
+        }
+
     }
 
     // #region Processing's keyboard event callbacks.

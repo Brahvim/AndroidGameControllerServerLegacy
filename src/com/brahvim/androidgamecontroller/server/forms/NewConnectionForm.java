@@ -1,5 +1,6 @@
 package com.brahvim.androidgamecontroller.server.forms;
 
+import com.brahvim.androidgamecontroller.RequestCode;
 import com.brahvim.androidgamecontroller.server.AgcClient;
 import com.brahvim.androidgamecontroller.server.AgcServerSocket;
 import com.brahvim.androidgamecontroller.server.StringTable;
@@ -24,6 +25,7 @@ public class NewConnectionForm extends AgcForm {
                 .addButton(StringTable.getString("ConfirmConnection.yes"), new Runnable() {
                     @Override
                     public void run() {
+                        AgcServerSocket.getInstance().sendCode(RequestCode.CLIENT_WAS_REGISTERED, p_client);
                         AgcServerSocket.getInstance().addClientIfAbsent(p_client);
                     }
                 }).setID("btn_yes")

@@ -57,8 +57,9 @@ public class AgcServerSocket extends UdpSocket {
             if (c.equals(p_client))
                 absent = false;
 
-        if (absent)
+        if (absent) {
             this.clients.add(p_client);
+        }
     }
 
     public boolean hasClient(AgcClient p_client) {
