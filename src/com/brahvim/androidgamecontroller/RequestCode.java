@@ -94,7 +94,7 @@ public enum RequestCode {
     /**
      * The port that AGC servers are always on.
      */
-    public static final int SERVER_PORT = 6443;
+    public final static int SERVER_PORT = 6443;
 
     /**
      * The bytes of this strings are suffixed when AGC sends a request code instead
@@ -106,7 +106,7 @@ public enum RequestCode {
      * This is how many bytes 'far' extra data starts in request packets.
      * Equals to {@code Integer.BYTES + RequestCode.CODE_SUFFIX.length}.
      */
-    public static final int EXTRA_DATA_START = Integer.BYTES + RequestCode.CODE_SUFFIX.length;
+    public final static int EXTRA_DATA_START = Integer.BYTES + RequestCode.CODE_SUFFIX.length;
 
     // I want to send request codes in this manner:
     // `CODE` + <request code> + <extra data, separated by underscores..?>.

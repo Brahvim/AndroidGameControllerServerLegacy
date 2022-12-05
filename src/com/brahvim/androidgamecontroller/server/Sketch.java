@@ -25,6 +25,8 @@ import com.brahvim.androidgamecontroller.serial.states.DpadButtonState;
 import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
 import com.brahvim.androidgamecontroller.serial.states.ThumbstickState;
 import com.brahvim.androidgamecontroller.serial.states.TouchpadState;
+import com.brahvim.androidgamecontroller.server.forms.AgcForm;
+import com.brahvim.androidgamecontroller.server.forms.SettingsForm;
 
 import processing.awt.PSurfaceAWT;
 import processing.core.PApplet;
@@ -119,7 +121,7 @@ public class Sketch extends PApplet {
             @Override
             public void mouseClicked() {
                 if (mouseButton == MouseEvent.BUTTON3) {
-                    Forms.SETTINGS.show();
+                    SettingsForm.INSTANCE.show();
                 }
             }
 
@@ -127,7 +129,7 @@ public class Sketch extends PApplet {
             public void keyPressed() {
                 // `525` is the context menu key / "right-click key" *at least* on my keyboard.
                 if (keyCode == KeyEvent.VK_SPACE || keyCode == 525)
-                    Forms.SETTINGS.show();
+                    SettingsForm.INSTANCE.show();
             }
 
             @Override
@@ -161,7 +163,7 @@ public class Sketch extends PApplet {
                 this.fadeWave.start();
 
                 // AgcServerSocket.tellAllClients(RequestCode.SERVER_CLOSE);
-                AgcServerSocket.INSTANCE.close();
+                AgcServerSocket.getInstance().close();
             }
 
             @Override
@@ -210,7 +212,7 @@ public class Sketch extends PApplet {
         else
             PApplet.runSketch(PApplet.concat(p_args, args), constructedSketch);
 
-        AgcServerSocket.init();
+        AgcServerSocket.init(); // No socket without this!
 
         System.out.printf("Welcome to AndroidGameController `%s`!\n",
                 AgcSettings.getSetting("version"));
@@ -332,8 +334,7 @@ public class Sketch extends PApplet {
     }
 
     public static void agcExit() {
-        for (Forms f : Forms.values())
-            f.closeForm();
+        AgcForm.closeAllAgcForms();
 
         for (Sketch s : Sketch.SKETCHES) {
             s.myExit();

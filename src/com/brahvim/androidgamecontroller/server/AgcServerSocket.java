@@ -12,13 +12,11 @@ import com.brahvim.androidgamecontroller.UdpSocket;
  * Singleton.
  */
 public class AgcServerSocket extends UdpSocket {
-    public static AgcServerSocket INSTANCE;
+    private static AgcServerSocket INSTANCE;
 
     private ArrayList<AgcClient> clients;
-
     // public static ArrayList<AgcClient> peers;
     // The ones that are currently being used! ...:D!
-
     private ArrayList<AgcClient> bannedClients;
 
     private AgcServerSocket() {
@@ -27,12 +25,14 @@ public class AgcServerSocket extends UdpSocket {
         this.bannedClients = new ArrayList<>();
     }
 
-    public static void init() {
-        AgcServerSocket.INSTANCE = new AgcServerSocket();
-    }
+    // Singleton stuff:
 
     public static AgcServerSocket getInstance() {
         return AgcServerSocket.INSTANCE;
+    }
+
+    public static void init() {
+        AgcServerSocket.INSTANCE = new AgcServerSocket();
     }
 
     /**
