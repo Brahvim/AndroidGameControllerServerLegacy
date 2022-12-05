@@ -8,24 +8,37 @@ import javax.swing.JDialog;
 import uibooster.model.Form;
 import uibooster.model.FormBuilder;
 
-@Deprecated
 public class AgcForm {
     protected FormBuilder build;
     protected Form form;
 
-    public void show() {
-        this.build = this.setup();
-        this.becomeRich();
+    public AgcForm(FormBuilder p_build) {
+        this.build = p_build;
+    }
+
+    protected Form show() {
+        if (this.form != null)
+            if (!this.form.isClosedByUser())
+                this.form.close();
+
         this.form = this.build.run();
+        this.makeFormRich();
+
+        return this.form;
     }
 
-    public void showBlocking() {
-        this.build = this.setup();
-        this.becomeRich();
+    protected Form showBlocking() {
+        if (this.form != null)
+            if (!this.form.isClosedByUser())
+                this.form.close();
+
         this.form = this.build.show();
+        this.makeFormRich();
+
+        return this.form;
     }
 
-    public void becomeRich() {
+    public void makeFormRich() {
         final Form FORM = this.form;
         final JDialog WIN = this.form.getWindow();
 
@@ -39,15 +52,6 @@ public class AgcForm {
         });
     }
 
-    // Overload this! :)
-    public FormBuilder setup() {
-        return null;
-    }
-
-    public Form get() {
-        return this.form;
-    }
-
     public boolean isFormOpen() {
         return this.form == null ? false : this.form.isClosedByUser() ? false : true;
     }
@@ -59,15 +63,6 @@ public class AgcForm {
     public void closeForm() {
         if (this.form != null)
             this.form.close();
-    }
-
-    public Form showForm() {
-        if (this.form != null)
-            if (!this.form.isClosedByUser())
-                this.form.close();
-
-        this.form = this.build.run();
-        return this.form;
     }
 
 }

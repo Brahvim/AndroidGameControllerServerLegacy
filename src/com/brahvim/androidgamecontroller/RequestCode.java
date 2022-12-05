@@ -122,7 +122,7 @@ public enum RequestCode {
         return true;
     }
 
-    public static RequestCode fromPacket(byte[] p_bytes) {
+    public static RequestCode fromReceivedPacket(byte[] p_bytes) {
         // Structure of a request-code packet (as a string) (WITHOUT THE `_`s):
         // `CODE_1234_ExtraData`.
         // ...where `1234` are the bytes of an integer,
@@ -162,7 +162,7 @@ public enum RequestCode {
         return ret;
     }
 
-    public static RequestCode fromBytes(byte[] p_bytes) {
+    public static RequestCode fromCodeBytes(byte[] p_bytes) {
         return RequestCode.values()[ByteBuffer.wrap(p_bytes).getInt()];
     }
 

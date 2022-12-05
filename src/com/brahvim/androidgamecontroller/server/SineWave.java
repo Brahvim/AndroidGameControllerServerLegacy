@@ -1,6 +1,4 @@
-package com.brahvim.androidgamecontroller;
-
-import com.brahvim.androidgamecontroller.server.Sketch;
+package com.brahvim.androidgamecontroller.server;
 
 public class SineWave {
     // #region Fields.

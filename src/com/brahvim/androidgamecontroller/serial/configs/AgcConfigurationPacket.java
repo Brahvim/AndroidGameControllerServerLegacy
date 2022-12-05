@@ -1,5 +1,8 @@
 package com.brahvim.androidgamecontroller.serial.configs;
 
+import com.brahvim.androidgamecontroller.serial.ButtonShape;
+import com.brahvim.androidgamecontroller.serial.DpadDirection;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,15 +11,12 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import com.brahvim.androidgamecontroller.serial.ButtonShape;
-import com.brahvim.androidgamecontroller.serial.DpadDirection;
-
 import processing.core.PVector;
 
 public class AgcConfigurationPacket implements Serializable {
     public final static long serialVersionUID = 8505272624450677291L;
 
-    public String AGC_VERSION;
+    public String agcVersion;
     public PVector screenDimensions;
     public long appStartMilliSinceEpoch;
 
@@ -45,7 +45,7 @@ public class AgcConfigurationPacket implements Serializable {
     // && screenDimensions == null;
     // }
 
-    public <T> T addObject(Object p_object) {
+    public <T> T addConfig(ControlConfigBase p_object) {
         if (p_object instanceof ButtonConfig)
             this.buttons.add((ButtonConfig) p_object);
 

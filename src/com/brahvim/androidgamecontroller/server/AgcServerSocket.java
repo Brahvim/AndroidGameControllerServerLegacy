@@ -12,7 +12,7 @@ import com.brahvim.androidgamecontroller.UdpSocket;
  * Singleton.
  */
 public class AgcServerSocket extends UdpSocket {
-    public final static AgcServerSocket INSTANCE = new AgcServerSocket();
+    public static AgcServerSocket INSTANCE;
 
     private ArrayList<AgcClient> clients;
 
@@ -25,6 +25,14 @@ public class AgcServerSocket extends UdpSocket {
         super(RequestCode.SERVER_PORT);
         this.clients = new ArrayList<>();
         this.bannedClients = new ArrayList<>();
+    }
+
+    public static void init() {
+        AgcServerSocket.INSTANCE = new AgcServerSocket();
+    }
+
+    public static AgcServerSocket getInstance() {
+        return AgcServerSocket.INSTANCE;
     }
 
     /**
@@ -310,8 +318,6 @@ public class AgcServerSocket extends UdpSocket {
     // #region Overrides.
     @Override
     public void onReceive(@NotNull byte[] p_data, String p_ip, int p_port) {
-        System.out.println("Recieved something!");
-        System.out.println(new String(p_data));
         for (Sketch s : Sketch.SKETCHES)
             s.onReceive(p_data, p_ip, p_port);
     }
@@ -319,7 +325,7 @@ public class AgcServerSocket extends UdpSocket {
     @Override
     protected void onStart() {
         // super.setPort(RequestCodes.get("SERVER_PORT"));
-        System.out.println("The socket has begun, boiiii!");
+        System.out.println("The socket has begun!");
         System.out.printf("Socket-Stats!:\n\t- IP: `%s`\n\t- Port: `%d`\n", super.getIp(), super.getPort());
     }
 

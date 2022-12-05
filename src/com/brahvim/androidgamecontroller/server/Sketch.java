@@ -19,7 +19,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
-import com.brahvim.androidgamecontroller.SineWave;
+import com.brahvim.androidgamecontroller.RequestCode;
 import com.brahvim.androidgamecontroller.serial.states.ButtonState;
 import com.brahvim.androidgamecontroller.serial.states.DpadButtonState;
 import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
@@ -106,6 +106,8 @@ public class Sketch extends PApplet {
 
     {
         awaitingConnectionsScene = new Scene() {
+            boolean noMorePings;
+
             @Override
             public void draw() {
                 gr.textAlign(PConstants.CENTER);
@@ -119,6 +121,32 @@ public class Sketch extends PApplet {
                 if (mouseButton == MouseEvent.BUTTON3) {
                     Forms.SETTINGS.show();
                 }
+            }
+
+            @Override
+            public void keyPressed() {
+                // `525` is the context menu key / "right-click key" *at least* on my keyboard.
+                if (keyCode == KeyEvent.VK_SPACE || keyCode == 525)
+                    Forms.SETTINGS.show();
+            }
+
+            @Override
+            public void onReceive(byte[] p_data, String p_ip, int p_port) {
+                if (RequestCode.packetHasCode(p_data)) {
+                    switch (RequestCode.fromReceivedPacket(p_data)) {
+                        case ADD_ME:
+                            AgcClient toAdd = new AgcClient(p_ip, p_port,
+                                    new String(RequestCode.getPacketExtras(p_data)));
+
+                            // Forms.Data.lastClient = toAdd;
+                            // Forms.NEW_CONNECTION.showBlocking();
+                            break;
+                        default:
+                            System.out.println(new String(p_data));
+                            break;
+                    }
+                }
+
             }
         };
 
@@ -142,9 +170,6 @@ public class Sketch extends PApplet {
                     float wave = fadeWave.get();
                     if (wave == 0) {
                         fadeWave.end();
-
-                        // while (!Forms.isFormClosed(Forms.settingsForm))
-                        // ;
                         delay(100);
                         exit();
                     } else {
@@ -185,13 +210,10 @@ public class Sketch extends PApplet {
         else
             PApplet.runSketch(PApplet.concat(p_args, args), constructedSketch);
 
-        synchronized (constructedSketch) {
-            Sketch.agcIcon = constructedSketch.loadImage(
-                    StringTable.getString("Meta.iconPath"));
-            synchronized (constructedSketch.awaitingConnectionsScene) {
-                constructedSketch.setScene(constructedSketch.awaitingConnectionsScene);
-            }
-        }
+        AgcServerSocket.init();
+
+        System.out.printf("Welcome to AndroidGameController `%s`!\n",
+                AgcSettings.getSetting("version"));
     }
 
     public void settings() {
@@ -202,8 +224,9 @@ public class Sketch extends PApplet {
 
     @Override
     public void setup() {
-        System.out.printf("Welcome to AndroidGameController `%s`!\n",
-                AgcSettings.getSetting("version"));
+        this.setScene(Sketch.SKETCHES.size() == 1
+                ? this.awaitingConnectionsScene
+                : this.workScene);
 
         this.sketchFrame = this.createSketchPanel(new Runnable() {
             @Override
@@ -216,10 +239,9 @@ public class Sketch extends PApplet {
         super.registerMethod("post", this);
 
         super.surface.setTitle(StringTable.getString("Meta.winTitle"));
-        super.surface.setIcon(
-                Sketch.agcIcon = Sketch.agcIcon == null
-                        ? this.loadImage(StringTable.getString("Meta.iconPath"))
-                        : Sketch.agcIcon);
+        super.surface.setIcon(Sketch.agcIcon = Sketch.agcIcon == null
+                ? this.loadImage(StringTable.getString("Meta.iconPath"))
+                : Sketch.agcIcon);
 
         this.minExtent = new PVector(0, 0);
         this.maxExtent = new PVector(displayWidth - width, displayHeight - height);
@@ -319,6 +341,8 @@ public class Sketch extends PApplet {
     }
 
     public void onReceive(byte[] p_data, String p_ip, int p_port) {
+        if (this.currentScene != null)
+            this.currentScene.onReceive(p_data, p_ip, p_port);
     }
 
     // #region Processing's keyboard event callbacks.
