@@ -40,14 +40,13 @@ public class SineWave {
     // name. Oof.
     /**
      * @author Brahvim
-     * @apiNote `p_angleOffset` must be in radians!
+     * @apiNote {@code p_angleOffset} must be in radians!
      */
     public SineWave(float p_freqMult, float p_angleOffset) {
         this.freqMult = p_freqMult;
         this.angleOffset = p_angleOffset;
         // this.angleOffset = Math.abs((float) Math.toRadians(p_angleOffset));
     }
-
     // #endregion
 
     // #region `start()` overloads and `setAngleOffset()`.
@@ -141,4 +140,5 @@ public class SineWave {
         // That looked like a matrix calculation LOL.
     }
     // #endregion
+
 }

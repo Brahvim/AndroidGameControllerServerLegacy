@@ -1,10 +1,12 @@
 package com.brahvim.androidgamecontroller.server;
 
+import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.MouseInfo;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -22,6 +24,10 @@ import javax.swing.KeyStroke;
 import com.brahvim.androidgamecontroller.RequestCode;
 import com.brahvim.androidgamecontroller.serial.ByteSerial;
 import com.brahvim.androidgamecontroller.serial.configs.AgcConfigurationPacket;
+import com.brahvim.androidgamecontroller.serial.configs.ButtonConfig;
+import com.brahvim.androidgamecontroller.serial.configs.DpadButtonConfig;
+import com.brahvim.androidgamecontroller.serial.configs.ThumbstickConfig;
+import com.brahvim.androidgamecontroller.serial.configs.TouchpadConfig;
 import com.brahvim.androidgamecontroller.serial.states.ButtonState;
 import com.brahvim.androidgamecontroller.serial.states.DpadButtonState;
 import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
@@ -30,6 +36,11 @@ import com.brahvim.androidgamecontroller.serial.states.TouchpadState;
 import com.brahvim.androidgamecontroller.server.forms.AgcForm;
 import com.brahvim.androidgamecontroller.server.forms.NewConnectionForm;
 import com.brahvim.androidgamecontroller.server.forms.SettingsForm;
+import com.brahvim.androidgamecontroller.server.server_render.ButtonRendererForServer;
+import com.brahvim.androidgamecontroller.server.server_render.DpadButtonRendererForServer;
+import com.brahvim.androidgamecontroller.server.server_render.ServerRenderer;
+import com.brahvim.androidgamecontroller.server.server_render.ThumbstickRendererForServer;
+import com.brahvim.androidgamecontroller.server.server_render.TouchpadRendererForServer;
 
 import processing.awt.PSurfaceAWT;
 import processing.core.PApplet;
@@ -54,17 +65,8 @@ public class Sketch extends PApplet {
     // #region Instance fields.
     public final Color javaBgColor = new Color(0, 0, 0, 1);
     public final Sketch SKETCH = this;
-    public int frameStartTime, pframeTime, frameTime;
-
-    // #region Controller UI related.
     public AgcClient client;
-
-    private ArrayList<ButtonState> buttonStates;
-    private ArrayList<DpadButtonState> dpadButtonStates;
-    private ArrayList<ThumbstickState> thumbstickStates;
-    private ArrayList<TouchpadState> touchpadStates;
-    private KeyboardState keyboardState;
-    // #endregion Controller UI related.
+    public int frameStartTime, pframeTime, frameTime;
 
     // #region Window coordinates and window states.
     public int bgColor = super.color(0, 150);
@@ -106,9 +108,25 @@ public class Sketch extends PApplet {
 
     public final Scene awaitingConnectionsScene, workScene, exitScene;
 
-    {
-        awaitingConnectionsScene = new Scene() {
+    // #region Scene methods.
+    private void scenes_settingsMenuMsCheck() {
+        if (mouseButton == MouseEvent.BUTTON3) {
+            if (!SettingsForm.INSTANCE.isFormOpen())
+                SettingsForm.INSTANCE.show();
+        }
+    }
 
+    private void scenes_settingsMenuKbCheck() {
+        // `525` is the context menu key / "right-click key" *at least* on my keyboard.
+        if (keyCode == KeyEvent.VK_SPACE || keyCode == 525)
+            if (!SettingsForm.INSTANCE.isFormOpen())
+                SettingsForm.INSTANCE.show();
+    }
+    // #endregion
+
+    {
+
+        awaitingConnectionsScene = new Scene() {
             @Override
             public void draw() {
                 gr.textAlign(PConstants.CENTER);
@@ -119,21 +137,13 @@ public class Sketch extends PApplet {
 
             @Override
             public void mouseClicked() {
-                if (mouseButton == MouseEvent.BUTTON3) {
-                    SettingsForm.INSTANCE.show();
-                }
+                scenes_settingsMenuMsCheck();
             }
 
             @Override
             public void keyPressed() {
-                // `525` is the context menu key / "right-click key" *at least* on my keyboard.
-                if (keyCode == KeyEvent.VK_SPACE || keyCode == 525)
-                    SettingsForm.INSTANCE.show();
+                scenes_settingsMenuKbCheck();
             }
-
-            // @Override
-            // public void onReceive(byte[] p_data, String p_ip, int p_port) {
-            // }
         };
 
         exitScene = new Scene() {
@@ -171,33 +181,146 @@ public class Sketch extends PApplet {
         };
 
         workScene = new Scene() {
+            // #region Fields.
+            ArrayList<ButtonState> buttonStates;
+            ArrayList<DpadButtonState> dpadButtonStates;
+            ArrayList<ThumbstickState> thumbstickStates;
+            ArrayList<TouchpadState> touchpadStates;
+            KeyboardState keyboardState;
+
+            ArrayList<ButtonRendererForServer> buttonRenderers;
+            ArrayList<DpadButtonRendererForServer> dpadButtonRenderers;
+            ArrayList<ThumbstickRendererForServer> thumbstickRenderers;
+            ArrayList<TouchpadRendererForServer> touchpadRenderers;
+            // #endregion
+
             @Override
             public void setup() {
                 System.out.println("CONGRATULATIIIIIIONS! You made it to the WORK scene!");
 
-                buttonStates = new ArrayList<>();
-                dpadButtonStates = new ArrayList<>();
-                thumbstickStates = new ArrayList<>();
-                touchpadStates = new ArrayList<>();
+                AgcConfigurationPacket config = client.getConfig();
+
+                System.out.println(config.buttons);
+                System.out.println(config.dpadButtons);
+                System.out.println(config.touchpads);
+                System.out.println(config.thumbsticks);
+
+                // State initialization:
+                buttonStates = new ArrayList<>(config.buttons.size());
+                dpadButtonStates = new ArrayList<>(config.dpadButtons.size());
+                thumbstickStates = new ArrayList<>(config.thumbsticks.size());
+                touchpadStates = new ArrayList<>(config.touchpads.size());
                 keyboardState = new KeyboardState();
+
+                // Renderer initialization:
+                buttonRenderers = new ArrayList<>(config.buttons.size());
+                dpadButtonRenderers = new ArrayList<>(config.dpadButtons.size());
+                thumbstickRenderers = new ArrayList<>(config.thumbsticks.size());
+                touchpadRenderers = new ArrayList<>(config.touchpads.size());
+
+                // #region Map them all over!:
+                for (int i = 0; i < config.buttons.size(); i++) {
+                    ButtonConfig c = config.buttons.get(i);
+                    c.scale.set(
+                            map(c.scale.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.scale.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+                    c.transform.set(
+                            map(c.transform.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+
+                    System.out.println(i);
+                    System.out.println(c.scale);
+                    System.out.println(c.transform);
+
+                    try {
+                        buttonRenderers.add(
+                                new ButtonRendererForServer(c, new Robot()));
+                    } catch (AWTException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                for (int i = 0; i < config.dpadButtons.size(); i++) {
+                    DpadButtonConfig c = config.dpadButtons.get(i);
+                    c.scale.set(
+                            map(c.scale.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.scale.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+                    c.transform.set(
+                            map(c.transform.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+
+                    try {
+                        dpadButtonRenderers.add(
+                                new DpadButtonRendererForServer(c, new Robot()));
+                    } catch (AWTException e) {
+                    }
+                }
+
+                for (int i = 0; i < config.thumbsticks.size(); i++) {
+                    ThumbstickConfig c = config.thumbsticks.get(i);
+                    c.scale.set(
+                            map(c.scale.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.scale.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+                    c.transform.set(
+                            map(c.transform.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+
+                    try {
+                        thumbstickRenderers.add(
+                                new ThumbstickRendererForServer(c, new Robot()));
+                    } catch (AWTException e) {
+                    }
+                }
+
+                for (int i = 0; i < config.touchpads.size(); i++) {
+                    TouchpadConfig c = config.touchpads.get(i);
+                    c.scale.set(
+                            map(c.scale.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.scale.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+                    c.transform.set(
+                            map(c.transform.x, 0, config.screenDimensions.x, 0, SKETCH.width),
+                            map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
+
+                    try {
+                        touchpadRenderers.add(
+                                new TouchpadRendererForServer(c, new Robot()));
+                    } catch (AWTException e) {
+                    }
+                }
+                // #endregion
 
             }
 
             @Override
             public void draw() {
+                for (ServerRenderer r : ServerRenderer.all) {
+                    r.draw(gr);
+                }
+
+                for (ButtonState s : buttonStates) {
+                    System.out.println(s.pressed);
+                }
+
             }
 
             @Override
             public void onReceive(byte[] p_data, AgcClient p_client) {
                 if (RequestCode.packetHasCode(p_data)) {
                     switch (RequestCode.fromReceivedPacket(p_data)) {
-                        
+                        case CLIENT_CLOSE:
+                            if (Sketch.SKETCHES.size() == 1)
+                                setScene(awaitingConnectionsScene);
+                            else
+                                exit();
+                            break;
+
                         default:
                             break;
                     }
                 } else { // Deserialize, compare using `controlNumber`, set!
                     Object deserialized = ByteSerial.decode(p_data);
 
+                    // #region `instanceof` checks...
                     if (deserialized instanceof ButtonState gotbuttonState) {
                         for (int i = 0; i < buttonStates.size(); i++) {
                             ButtonState s = buttonStates.get(i);
@@ -229,9 +352,20 @@ public class Sketch extends PApplet {
                     } else if (deserialized instanceof KeyboardState gotKeyboardState) {
                         keyboardState = gotKeyboardState;
                     }
+                    // #endregion
 
                 }
 
+            }
+
+            @Override
+            public void mouseClicked() {
+                scenes_settingsMenuMsCheck();
+            }
+
+            @Override
+            public void keyPressed() {
+                scenes_settingsMenuKbCheck();
             }
         };
     }
