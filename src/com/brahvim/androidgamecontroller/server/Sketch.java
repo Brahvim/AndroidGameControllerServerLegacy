@@ -186,6 +186,7 @@ public class Sketch extends PApplet {
             ArrayList<DpadButtonState> dpadButtonStates;
             ArrayList<ThumbstickState> thumbstickStates;
             ArrayList<TouchpadState> touchpadStates;
+            @SuppressWarnings("unused")
             KeyboardState keyboardState;
 
             ArrayList<ButtonRendererForServer> buttonRenderers;
@@ -308,6 +309,7 @@ public class Sketch extends PApplet {
                 if (RequestCode.packetHasCode(p_data)) {
                     switch (RequestCode.fromReceivedPacket(p_data)) {
                         case CLIENT_CLOSE:
+                            AgcServerSocket.getInstance().removeClient(p_client);
                             if (Sketch.SKETCHES.size() == 1)
                                 setScene(awaitingConnectionsScene);
                             else
@@ -319,6 +321,8 @@ public class Sketch extends PApplet {
                     }
                 } else { // Deserialize, compare using `controlNumber`, set!
                     Object deserialized = ByteSerial.decode(p_data);
+
+                    System.out.println(deserialized.getClass().getSimpleName());
 
                     // #region `instanceof` checks...
                     if (deserialized instanceof ButtonState gotbuttonState) {

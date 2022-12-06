@@ -157,7 +157,7 @@ public enum RequestCode {
 
         if (ret.length - RequestCode.EXTRA_DATA_START >= 0)
             System.arraycopy(p_data, RequestCode.EXTRA_DATA_START, ret,
-                    0, ret.length);
+              0, ret.length);
 
         return ret;
     }

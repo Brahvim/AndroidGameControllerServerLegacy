@@ -87,7 +87,7 @@ public class UdpSocket {
          * The {@code Thread} that handles the network's receive calls.
          *
          * @implSpec {@linkplain UdpSocket.Receiver#start()}
-         *           should set this to be a daemon thread.
+         * should set this to be a daemon thread.
          * @see UdpSocket.Receiver#start()
          * @see UdpSocket.Receiver#stop()
          */
@@ -97,15 +97,14 @@ public class UdpSocket {
          * Sets the size of the buffer (in bytes) data is received into. The maximum
          * possible size is {@code 65535} bytes.
          *
-         * @deprecated This should not be something you need to worry about. Modern
-         *             computers are good enough already, and a `65`kb allocation when
-         *             your application already takes `200`MB won't be a big problem.
-         *
          * @apiNote Is {@code 65535} {@link Receiver#PACKET_MAX_SIZE} by default.
          * @implNote <i>Should</i> be {@code 576} by default. To know why,
-         *           please see
-         *           {@link<a href=
-         *           "https://stackoverflow.com/a/9235558/13951505">this</a>}.
+         * please see
+         * {@link<a href=
+         * "https://stackoverflow.com/a/9235558/13951505">this</a>}.
+         * @deprecated This should not be something you need to worry about. Modern
+         * computers are good enough already, and a `65`kb allocation when
+         * your application already takes `200`MB won't be a big problem.
          */
 
         @Deprecated
@@ -142,7 +141,7 @@ public class UdpSocket {
          *
          * @param p_parent The {@code UdpSocket} instance.
          * @implNote {@code p_parent} may not be used since {@code Receiver} is a class
-         *           nested inside {@linkplain UdpSocket}
+         * nested inside {@linkplain UdpSocket}
          */
         Receiver(UdpSocket p_parent) {
             Receiver.NUMBER_OF_THREADS++;
@@ -201,8 +200,8 @@ public class UdpSocket {
                                 // I'm only worried about de-allocation.
 
                                 onReceive(copy,
-                                        addr.toString().substring(1),
-                                        in.getPort());
+                                  addr.toString().substring(1),
+                                  in.getPort());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -246,6 +245,7 @@ public class UdpSocket {
     }
 
     // #region Construction!~
+
     /**
      * Constructs a {@code UdpSocket} with an empty port requested from the OS, the
      * receiver thread of which will time-out every
@@ -281,9 +281,9 @@ public class UdpSocket {
      * timeout (in milliseconds).
      *
      * @apiNote This constructor used to try to force the OS into giving the port of
-     *          the user's choice. This functionality has now been split. Please see
-     *          {@linkplain UdpSocket#createSocketForcingPort(int, int)} and
-     *          {@linkplain UdpSocket#UdpSocket(DatagramSocket)}.
+     * the user's choice. This functionality has now been split. Please see
+     * {@linkplain UdpSocket#createSocketForcingPort(int, int)} and
+     * {@linkplain UdpSocket#UdpSocket(DatagramSocket)}.
      */
     public UdpSocket(int p_port, int p_timeout) {
         try {
@@ -327,6 +327,7 @@ public class UdpSocket {
     // #endregion
 
     // #region Callbacks. These are what you get. LOOK HERE!
+
     /**
      * Simply called by the constructor of {@code UdpSocket}, really.
      */
@@ -424,6 +425,7 @@ public class UdpSocket {
     // #endregion
 
     // #region Other `public` methods!:
+
     /**
      * Sends over a {@code byte[]} to the specified IP address and port.
      */
@@ -431,7 +433,7 @@ public class UdpSocket {
         // System.out.println("The socket sent some data!");
         try {
             this.sock.send(out = new DatagramPacket(
-                    p_data, p_data.length, InetAddress.getByName(p_ip), p_port));
+              p_data, p_data.length, InetAddress.getByName(p_ip), p_port));
         } catch (IOException e) {
             if (e instanceof UnknownHostException) {
                 e.printStackTrace();
@@ -447,7 +449,7 @@ public class UdpSocket {
      */
     public void send(String p_message, String p_ip, int p_port) {
         this.send(p_message.getBytes(StandardCharsets.UTF_8),
-                p_ip, p_port);
+          p_ip, p_port);
 
         // VSCode, please allow comments without an
         // extra space, I beg you. I need it for my style! I DON'T insert spaces for
@@ -481,6 +483,7 @@ public class UdpSocket {
     // #endregion
 
     // #region `static` stuff!:
+
     /**
      * Tries to 'force' the OS into constructing a socket with the port specified
      * using {@code DatagramSocket.setReuseAddress(boolean)}.
