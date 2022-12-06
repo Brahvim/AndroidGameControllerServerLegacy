@@ -111,7 +111,7 @@ public class Sketch extends PApplet {
     // #region Scene methods.
     private void scenes_settingsMenuMsCheck() {
         if (mouseButton == MouseEvent.BUTTON3) {
-            if (!SettingsForm.INSTANCE.isFormOpen())
+            if (!SettingsForm.INSTANCE.isOpen())
                 SettingsForm.INSTANCE.show();
         }
     }
@@ -119,7 +119,7 @@ public class Sketch extends PApplet {
     private void scenes_settingsMenuKbCheck() {
         // `525` is the context menu key / "right-click key" *at least* on my keyboard.
         if (keyCode == KeyEvent.VK_SPACE || keyCode == 525)
-            if (!SettingsForm.INSTANCE.isFormOpen())
+            if (!SettingsForm.INSTANCE.isOpen())
                 SettingsForm.INSTANCE.show();
     }
     // #endregion
@@ -184,10 +184,6 @@ public class Sketch extends PApplet {
             // #region Fields.
             AgcConfigurationPacket config;
 
-            ArrayList<ButtonState> buttonStates;
-            ArrayList<DpadButtonState> dpadButtonStates;
-            ArrayList<ThumbstickState> thumbstickStates;
-            ArrayList<TouchpadState> touchpadStates;
             @SuppressWarnings("unused")
             KeyboardState keyboardState;
 
@@ -547,11 +543,12 @@ public class Sketch extends PApplet {
             }
         }
 
-        if (sender == null)
+        if (sender == null) {
             sender = new AgcClient(p_ip, p_port, new String(
                     RequestCode.getPacketExtras(p_data)));
-
-        System.out.printf("%s sent a message.\n", sender.getDeviceName());
+            System.out.printf("%s wants to connect!\n", sender.getDeviceName());
+        } else
+            System.out.printf("%s sent a message.\n", sender.getDeviceName());
 
         if (this.currentScene != null)
             if (currentScene == awaitingConnectionsScene)
@@ -574,7 +571,10 @@ public class Sketch extends PApplet {
                         if (!NewConnectionForm.noMorePings) {
                             new Thread() {
                                 public void run() {
-                                    NewConnectionForm.build(toAdd).show();
+                                    NewConnectionForm form = NewConnectionForm.build(toAdd);
+                                    if (form == null)
+                                        return;
+                                    form.show();
                                 };
                             }.start();
                         }

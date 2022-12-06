@@ -20,13 +20,18 @@ public class AgcForm {
     public final static ArrayList<AgcForm> FORMS = new ArrayList<>();
     public final static ArrayList<AgcForm> VISIBLE_FORMS = new ArrayList<>(4);
 
-    private FormBuilder build;
+    // #region Fields and constructors.
+    protected FormBuilder build;
     private Form form;
+
+    protected AgcForm() {
+    }
 
     public AgcForm(FormBuilder p_build) {
         this.build = p_build;
         AgcForm.FORMS.add(this);
     }
+    // #endregion
 
     public final Form show() {
         if (this.form != null)
@@ -79,11 +84,11 @@ public class AgcForm {
         });
     }
 
-    public final boolean isFormOpen() {
+    public final boolean isOpen() {
         return this.form == null ? false : this.form.isClosedByUser() ? false : true;
     }
 
-    public final boolean isFormClosed() {
+    public final boolean isClosed() {
         return this.form == null ? true : this.form.isClosedByUser();
     }
 
