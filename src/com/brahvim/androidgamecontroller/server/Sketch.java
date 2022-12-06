@@ -182,6 +182,8 @@ public class Sketch extends PApplet {
 
         workScene = new Scene() {
             // #region Fields.
+            AgcConfigurationPacket config;
+
             ArrayList<ButtonState> buttonStates;
             ArrayList<DpadButtonState> dpadButtonStates;
             ArrayList<ThumbstickState> thumbstickStates;
@@ -199,7 +201,7 @@ public class Sketch extends PApplet {
             public void setup() {
                 System.out.println("CONGRATULATIIIIIIONS! You made it to the WORK scene!");
 
-                AgcConfigurationPacket config = client.getConfig();
+                config = client.getConfig();
 
                 System.out.println(config.buttons);
                 System.out.println(config.dpadButtons);
@@ -207,17 +209,17 @@ public class Sketch extends PApplet {
                 System.out.println(config.thumbsticks);
 
                 // State initialization:
-                buttonStates = new ArrayList<>(config.buttons.size());
-                dpadButtonStates = new ArrayList<>(config.dpadButtons.size());
-                thumbstickStates = new ArrayList<>(config.thumbsticks.size());
-                touchpadStates = new ArrayList<>(config.touchpads.size());
-                keyboardState = new KeyboardState();
+                this.buttonStates = new ArrayList<>(config.buttons.size());
+                this.dpadButtonStates = new ArrayList<>(config.dpadButtons.size());
+                this.thumbstickStates = new ArrayList<>(config.thumbsticks.size());
+                this.touchpadStates = new ArrayList<>(config.touchpads.size());
+                this.keyboardState = new KeyboardState();
 
                 // Renderer initialization:
-                buttonRenderers = new ArrayList<>(config.buttons.size());
-                dpadButtonRenderers = new ArrayList<>(config.dpadButtons.size());
-                thumbstickRenderers = new ArrayList<>(config.thumbsticks.size());
-                touchpadRenderers = new ArrayList<>(config.touchpads.size());
+                this.buttonRenderers = new ArrayList<>(config.buttons.size());
+                this.dpadButtonRenderers = new ArrayList<>(config.dpadButtons.size());
+                this.thumbstickRenderers = new ArrayList<>(config.thumbsticks.size());
+                this.touchpadRenderers = new ArrayList<>(config.touchpads.size());
 
                 // #region Map them all over!:
                 for (int i = 0; i < config.buttons.size(); i++) {
@@ -298,7 +300,7 @@ public class Sketch extends PApplet {
                     r.draw(gr);
                 }
 
-                for (ButtonState s : buttonStates) {
+                for (ButtonState s : this.buttonStates) {
                     System.out.println(s.pressed);
                 }
 
@@ -410,7 +412,7 @@ public class Sketch extends PApplet {
 
     @Override
     public void setup() {
-
+        this.updateRatios();
         this.sketchFrame = this.createSketchPanel(new Runnable() {
             @Override
             public void run() {
@@ -422,6 +424,9 @@ public class Sketch extends PApplet {
         super.registerMethod("post", this);
 
         super.surface.setTitle(StringTable.getString("Meta.winTitle"));
+        super.surface.setLocation(
+                displayWidth / 2 - (int) cx,
+                displayHeight / 2 + (int) cy);
         super.surface.setIcon(Sketch.agcIcon = Sketch.agcIcon == null
                 ? this.loadImage(StringTable.getString("Meta.iconPath"))
                 : Sketch.agcIcon);

@@ -31,8 +31,8 @@ public class AgcServerSocket extends UdpSocket {
         return AgcServerSocket.INSTANCE;
     }
 
-    public static void init() {
-        AgcServerSocket.INSTANCE = new AgcServerSocket();
+    public static AgcServerSocket init() {
+        return AgcServerSocket.INSTANCE = new AgcServerSocket();
     }
 
     /**

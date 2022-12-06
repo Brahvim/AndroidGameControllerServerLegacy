@@ -1,5 +1,7 @@
 package com.brahvim.androidgamecontroller.server.forms;
 
+import javax.swing.JDialog;
+
 import com.brahvim.androidgamecontroller.RequestCode;
 import com.brahvim.androidgamecontroller.server.AgcClient;
 import com.brahvim.androidgamecontroller.server.AgcServerSocket;
@@ -58,6 +60,13 @@ public class NewConnectionForm extends AgcForm {
             ;
         NewConnectionForm.noMorePings = true;
         return NewConnectionForm.INSTANCE = new NewConnectionForm(p_client);
+    }
+
+    @Override
+    protected void onShow(Form p_form) {
+        JDialog win = p_form.getWindow();
+        win.setFocusable(true);
+        win.requestFocus();
     }
 
     @Override
