@@ -87,7 +87,7 @@ public class AgcSettings {
         return ret;
     }
 
-    public static synchronized void set(String p_key, String p_value) {
+    public static synchronized void add(String p_key, String p_value) {
         if (AgcSettings.table == null)
             AgcSettings.refresh();
 
@@ -103,7 +103,7 @@ public class AgcSettings {
         }
     }
 
-    public static synchronized void set(String... p_settings) {
+    public static synchronized void add(String... p_settings) {
         if (AgcSettings.table == null)
             AgcSettings.refresh();
 

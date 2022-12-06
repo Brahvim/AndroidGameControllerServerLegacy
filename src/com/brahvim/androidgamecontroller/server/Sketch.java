@@ -361,7 +361,6 @@ public class Sketch extends PApplet {
                     // #endregion
 
                 }
-
             }
 
             @Override
@@ -539,6 +538,7 @@ public class Sketch extends PApplet {
 
     public void onReceive(byte[] p_data, String p_ip, int p_port) {
         AgcClient sender = new AgcClient(p_ip, p_port, new String(RequestCode.getPacketExtras(p_data)));
+        System.out.println(sender);
 
         if (this.currentScene != null)
             if (currentScene == awaitingConnectionsScene)

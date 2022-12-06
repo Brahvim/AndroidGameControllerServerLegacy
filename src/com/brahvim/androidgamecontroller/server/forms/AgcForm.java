@@ -73,7 +73,7 @@ public class AgcForm {
 
         WIN.addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(WindowEvent p_windowEvent) {
+            public void windowClosed(WindowEvent p_windowEvent) {
                 AGC_FORM.onClose();
             }
         });
