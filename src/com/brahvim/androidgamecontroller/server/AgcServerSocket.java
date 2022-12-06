@@ -77,7 +77,7 @@ public class AgcServerSocket extends UdpSocket {
     }
 
     public void removeClient(AgcClient p_client) {
-        this.clients.remove(p_client)
+        this.clients.remove(p_client);
     }
 
     public AgcClient getClientFromIp(String p_ip) {
