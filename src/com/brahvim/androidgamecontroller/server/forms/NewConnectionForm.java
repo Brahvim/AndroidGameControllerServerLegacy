@@ -1,8 +1,5 @@
 package com.brahvim.androidgamecontroller.server.forms;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
 import javax.swing.JDialog;
 
 import com.brahvim.androidgamecontroller.RequestCode;
@@ -67,23 +64,13 @@ public class NewConnectionForm extends AgcForm {
 
     @Override
     protected void onShow(Form p_form) {
-        final NewConnectionForm AGC_FORM = this;
         final JDialog WIN = p_form.getWindow();
-
         WIN.setFocusable(true);
         WIN.requestFocus();
-        WIN.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent p_WindowEvent) {
-                // System.out.println("NewConnectionForm.onShow(...).new WindowAdapter() {...}.windowClosing()");
-                // AGC_FORM.onClose();
-            }
-        });
     }
 
     @Override
     protected void onClose() {
-        System.out.println("NewConnectionForm.onClose()");
         NewConnectionForm.noMorePings = false;
         NewConnectionForm.INSTANCE = null;
     }

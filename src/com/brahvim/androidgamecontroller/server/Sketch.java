@@ -201,20 +201,7 @@ public class Sketch extends PApplet {
             public void setup() {
                 System.out.println("CONGRATULATIIIIIIONS! You made it to the WORK scene!");
 
-                config = client.getConfig();
-
-                System.out.println(config.buttons);
-                System.out.println(config.dpadButtons);
-                System.out.println(config.touchpads);
-                System.out.println(config.thumbsticks);
-
-                // State initialization:
-                this.buttonStates = new ArrayList<>(config.buttons.size());
-                this.dpadButtonStates = new ArrayList<>(config.dpadButtons.size());
-                this.thumbstickStates = new ArrayList<>(config.thumbsticks.size());
-                this.touchpadStates = new ArrayList<>(config.touchpads.size());
-                this.keyboardState = new KeyboardState();
-
+                this.config = client.getConfig();
                 // Renderer initialization:
                 this.buttonRenderers = new ArrayList<>(config.buttons.size());
                 this.dpadButtonRenderers = new ArrayList<>(config.dpadButtons.size());
@@ -230,14 +217,10 @@ public class Sketch extends PApplet {
                     c.transform.set(
                             map(c.transform.x, 0, config.screenDimensions.x, 0, SKETCH.width),
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
-
-                    System.out.println(i);
-                    System.out.println(c.scale);
-                    System.out.println(c.transform);
-
                     try {
-                        buttonRenderers.add(
-                                new ButtonRendererForServer(c, new Robot()));
+                        ButtonRendererForServer toAdd = new ButtonRendererForServer(c, new Robot());
+                        toAdd.state.controlNumber = c.controlNumber;
+                        buttonRenderers.add(toAdd);
                     } catch (AWTException e) {
                         e.printStackTrace();
                     }
@@ -253,8 +236,9 @@ public class Sketch extends PApplet {
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
 
                     try {
-                        dpadButtonRenderers.add(
-                                new DpadButtonRendererForServer(c, new Robot()));
+                        DpadButtonRendererForServer toAdd = new DpadButtonRendererForServer(c, new Robot());
+                        toAdd.state.controlNumber = c.controlNumber;
+                        dpadButtonRenderers.add(toAdd);
                     } catch (AWTException e) {
                     }
                 }
@@ -269,8 +253,9 @@ public class Sketch extends PApplet {
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
 
                     try {
-                        thumbstickRenderers.add(
-                                new ThumbstickRendererForServer(c, new Robot()));
+                        ThumbstickRendererForServer toAdd = new ThumbstickRendererForServer(c, new Robot());
+                        toAdd.state.controlNumber = c.controlNumber;
+                        thumbstickRenderers.add(toAdd);
                     } catch (AWTException e) {
                     }
                 }
@@ -285,8 +270,9 @@ public class Sketch extends PApplet {
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
 
                     try {
-                        touchpadRenderers.add(
-                                new TouchpadRendererForServer(c, new Robot()));
+                        TouchpadRendererForServer toAdd = new TouchpadRendererForServer(c, new Robot());
+                        toAdd.state.controlNumber = c.controlNumber;
+                        touchpadRenderers.add(toAdd);
                     } catch (AWTException e) {
                     }
                 }
@@ -299,11 +285,6 @@ public class Sketch extends PApplet {
                 for (ServerRenderer r : ServerRenderer.all) {
                     r.draw(gr);
                 }
-
-                for (ButtonState s : this.buttonStates) {
-                    System.out.println(s.pressed);
-                }
-
             }
 
             @Override
@@ -323,44 +304,61 @@ public class Sketch extends PApplet {
                     }
                 } else { // Deserialize, compare using `controlNumber`, set!
                     Object deserialized = ByteSerial.decode(p_data);
-
-                    System.out.println(deserialized.getClass().getSimpleName());
-
-                    // #region `instanceof` checks...
-                    if (deserialized instanceof ButtonState gotbuttonState) {
-                        for (int i = 0; i < buttonStates.size(); i++) {
-                            ButtonState s = buttonStates.get(i);
-                            if (s.controlNumber == gotbuttonState.controlNumber) {
-                                buttonStates.set(i, gotbuttonState);
-                            }
-                        }
-                    } else if (deserialized instanceof DpadButtonState gotDpadButtonState) {
-                        for (int i = 0; i < buttonStates.size(); i++) {
-                            DpadButtonState s = dpadButtonStates.get(i);
-                            if (s.controlNumber == gotDpadButtonState.controlNumber) {
-                                dpadButtonStates.set(i, gotDpadButtonState);
-                            }
-                        }
-                    } else if (deserialized instanceof ThumbstickState gotThumbstickState) {
-                        for (int i = 0; i < buttonStates.size(); i++) {
-                            ThumbstickState s = thumbstickStates.get(i);
-                            if (s.controlNumber == gotThumbstickState.controlNumber) {
-                                thumbstickStates.set(i, gotThumbstickState);
-                            }
-                        }
-                    } else if (deserialized instanceof TouchpadState gotTouchpadState) {
-                        for (int i = 0; i < buttonStates.size(); i++) {
-                            TouchpadState s = touchpadStates.get(i);
-                            if (s.controlNumber == gotTouchpadState.controlNumber) {
-                                touchpadStates.set(i, gotTouchpadState);
-                            }
-                        }
-                    } else if (deserialized instanceof KeyboardState gotKeyboardState) {
-                        keyboardState = gotKeyboardState;
-                    }
+                    boolean isButtonRecognized = updateRendererState(deserialized);
+                    if (!isButtonRecognized)
+                        System.out.printf("%s was not assigned.\n",
+                                deserialized.getClass().getSimpleName());
+                    // System.out.printf("It's ID was `%d`.\n",
+                    // ((StateBase) deserialized).controlNumber);
                     // #endregion
-
                 }
+
+            }
+
+            /**
+             * @return Indication of whether or not some renderer made use of this update.
+             */
+            private boolean updateRendererState(Object p_updatedState) {
+                // #region `instanceof` checks...
+                if (p_updatedState instanceof ButtonState newState) {
+                    for (int i = 0; i < this.buttonRenderers.size(); i++) {
+                        ButtonState s = buttonRenderers.get(i).state;
+                        if (s.controlNumber == newState.controlNumber) {
+                            buttonRenderers.get(i).state = newState;
+                            return true;
+                        }
+                    }
+                } else if (p_updatedState instanceof DpadButtonState newState) {
+                    for (int i = 0; i < this.dpadButtonRenderers.size(); i++) {
+                        DpadButtonState s = this.dpadButtonRenderers.get(i).state;
+                        if (s.controlNumber == newState.controlNumber) {
+                            this.dpadButtonRenderers.get(i).state = newState;
+                            return true;
+                        }
+                    }
+                } else if (p_updatedState instanceof ThumbstickState newState) {
+                    for (int i = 0; i < this.thumbstickRenderers.size(); i++) {
+                        ThumbstickState s = this.thumbstickRenderers.get(i).state;
+                        if (s.controlNumber == newState.controlNumber) {
+                            this.thumbstickRenderers.get(i).state = newState;
+                            return true;
+                        }
+                    }
+                } else if (p_updatedState instanceof TouchpadState newState) {
+                    for (int i = 0; i < this.touchpadRenderers.size(); i++) {
+                        TouchpadState s = this.touchpadRenderers.get(i).state;
+                        if (s.controlNumber == newState.controlNumber) {
+                            this.touchpadRenderers.get(i).state = newState;
+                            return true;
+                        }
+                    }
+                } else if (p_updatedState instanceof KeyboardState newState) {
+                    this.keyboardState = newState;
+                    return true;
+                }
+
+                // Nothing listed here used it! return `false`!:
+                return false;
             }
 
             @Override
@@ -537,8 +535,19 @@ public class Sketch extends PApplet {
     }
 
     public void onReceive(byte[] p_data, String p_ip, int p_port) {
-        AgcClient sender = new AgcClient(p_ip, p_port, new String(RequestCode.getPacketExtras(p_data)));
-        System.out.println(sender);
+        AgcClient sender = null;
+
+        for (AgcClient c : AgcServerSocket.getInstance().getClients()) {
+            if (c.getIp().equals(p_ip)) {
+                sender = c;
+            }
+        }
+
+        if (sender == null)
+            sender = new AgcClient(p_ip, p_port, new String(
+                    RequestCode.getPacketExtras(p_data)));
+
+        System.out.printf("%s sent a message.\n", sender.getDeviceName());
 
         if (this.currentScene != null)
             if (currentScene == awaitingConnectionsScene)
@@ -552,15 +561,16 @@ public class Sketch extends PApplet {
         if (RequestCode.packetHasCode(p_data)) {
             switch (RequestCode.fromReceivedPacket(p_data)) {
                 case ADD_ME:
-                    if (AgcServerSocket.getInstance().isClientBanned(sender))
+                    final AgcClient toAdd = sender;
+                    if (AgcServerSocket.getInstance().isClientBanned(toAdd))
                         return;
 
                     // If the client isn't already in our list,
-                    if (!AgcServerSocket.getInstance().hasClient(sender))
+                    if (!AgcServerSocket.getInstance().hasClient(toAdd))
                         if (!NewConnectionForm.noMorePings) {
                             new Thread() {
                                 public void run() {
-                                    NewConnectionForm.build(sender).show();
+                                    NewConnectionForm.build(toAdd).show();
                                 };
                             }.start();
                         }
