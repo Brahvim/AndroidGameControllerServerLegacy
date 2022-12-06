@@ -18,14 +18,10 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
     private Robot robot;
     private Sketch parentSketch;
 
-    public TouchpadRendererForServer(@NotNull TouchpadConfig p_config) {
-        super(p_config);
-        ServerRenderer.all.add(this);
-    }
-
-    public TouchpadRendererForServer(@NotNull TouchpadConfig p_config, Robot p_robot) {
+    public TouchpadRendererForServer(Sketch p_parentSketch, @NotNull TouchpadConfig p_config, Robot p_robot) {
         super(p_config);
         this.robot = p_robot;
+        this.parentSketch = p_parentSketch;
         ServerRenderer.all.add(this);
     }
 

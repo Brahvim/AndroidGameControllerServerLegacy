@@ -218,7 +218,8 @@ public class Sketch extends PApplet {
                             map(c.transform.x, 0, config.screenDimensions.x, 0, SKETCH.width),
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
                     try {
-                        ButtonRendererForServer toAdd = new ButtonRendererForServer(c, new Robot());
+                        ButtonRendererForServer toAdd = new ButtonRendererForServer(
+                                SKETCH, c, new Robot());
                         toAdd.state.controlNumber = c.controlNumber;
                         buttonRenderers.add(toAdd);
                     } catch (AWTException e) {
@@ -236,7 +237,8 @@ public class Sketch extends PApplet {
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
 
                     try {
-                        DpadButtonRendererForServer toAdd = new DpadButtonRendererForServer(c, new Robot());
+                        DpadButtonRendererForServer toAdd = new DpadButtonRendererForServer(
+                                SKETCH, c, new Robot());
                         toAdd.state.controlNumber = c.controlNumber;
                         dpadButtonRenderers.add(toAdd);
                     } catch (AWTException e) {
@@ -253,7 +255,8 @@ public class Sketch extends PApplet {
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
 
                     try {
-                        ThumbstickRendererForServer toAdd = new ThumbstickRendererForServer(c, new Robot());
+                        ThumbstickRendererForServer toAdd = new ThumbstickRendererForServer(
+                                SKETCH, c, new Robot());
                         toAdd.state.controlNumber = c.controlNumber;
                         thumbstickRenderers.add(toAdd);
                     } catch (AWTException e) {
@@ -270,7 +273,8 @@ public class Sketch extends PApplet {
                             map(c.transform.y, 0, config.screenDimensions.y, 0, SKETCH.height));
 
                     try {
-                        TouchpadRendererForServer toAdd = new TouchpadRendererForServer(c, new Robot());
+                        TouchpadRendererForServer toAdd = new TouchpadRendererForServer(
+                                SKETCH, c, new Robot());
                         toAdd.state.controlNumber = c.controlNumber;
                         touchpadRenderers.add(toAdd);
                     } catch (AWTException e) {
