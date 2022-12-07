@@ -17,13 +17,10 @@ public class ButtonRendererForServer extends ButtonRendererBase implements Serve
     @SuppressWarnings("unused")
     private Sketch parentSketch;
 
-    // public ButtonRendererForServer(@NotNull ButtonConfig p_config) {
-    // super(p_config);
-    // }
-
-    public ButtonRendererForServer(@NotNull ButtonConfig p_config, Robot p_robot) {
+    public ButtonRendererForServer(Sketch p_parentSketch, @NotNull ButtonConfig p_config, Robot p_robot) {
         super(p_config);
         this.robot = p_robot;
+        this.parentSketch = p_parentSketch;
         ServerRenderer.all.add(this);
     }
 

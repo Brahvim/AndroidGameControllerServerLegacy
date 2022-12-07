@@ -17,14 +17,10 @@ public class DpadButtonRendererForServer extends DpadButtonRendererBase implemen
     @SuppressWarnings("unused")
     private Sketch parentSketch;
 
-    public DpadButtonRendererForServer(@NotNull DpadButtonConfig p_config) {
-        super(p_config);
-        ServerRenderer.all.add(this);
-    }
-
-    public DpadButtonRendererForServer(@NotNull DpadButtonConfig p_config, Robot p_robot) {
+    public DpadButtonRendererForServer(Sketch p_parentSketch, @NotNull DpadButtonConfig p_config, Robot p_robot) {
         super(p_config);
         this.robot = p_robot;
+        this.parentSketch = p_parentSketch;
         ServerRenderer.all.add(this);
     }
 
