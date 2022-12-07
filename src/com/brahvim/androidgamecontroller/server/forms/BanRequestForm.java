@@ -16,14 +16,12 @@ public class BanRequestForm extends AgcForm {
                     @Override
                     public void run() {
                         AgcServerSocket.getInstance().banClient(p_client);
-                        NewConnectionForm.noMorePings = false;
                         THIS.close();
                     }
                 })
                 .addButton(StringTable.getString("RejectConnection.no"), new Runnable() {
                     @Override
                     public void run() {
-                        NewConnectionForm.noMorePings = false;
                         THIS.close();
                     }
                 });
