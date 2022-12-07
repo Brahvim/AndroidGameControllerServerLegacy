@@ -44,6 +44,7 @@ public class NewConnectionForm extends AgcForm {
 
                                 BanRequestForm banForm = new BanRequestForm(
                                         p_client, NewConnectionForm.lastInstance);
+                                NewConnectionForm.destroyAllInstances();
                                 banForm.show();
                             }
                         }.start();
@@ -55,8 +56,6 @@ public class NewConnectionForm extends AgcForm {
         while (!(NewConnectionForm.lastInstance == null &&
                 NewConnectionForm.INSTANCES.size() == 0))
             ;
-
-        NewConnectionForm.destroyAllInstances();
 
         NewConnectionForm.noMorePings = true;
         return NewConnectionForm.lastInstance = new NewConnectionForm(p_client);
