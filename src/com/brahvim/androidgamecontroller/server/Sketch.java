@@ -571,9 +571,13 @@ public class Sketch extends PApplet {
                         if (!NewConnectionForm.noMorePings) {
                             new Thread() {
                                 public void run() {
+                                    if (NewConnectionForm.noMorePings)
+                                        return;
+
                                     NewConnectionForm form = NewConnectionForm.build(toAdd);
                                     if (form == null)
                                         return;
+
                                     form.show();
                                 };
                             }.start();

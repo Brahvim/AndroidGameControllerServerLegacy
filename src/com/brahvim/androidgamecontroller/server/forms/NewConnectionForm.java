@@ -1,5 +1,7 @@
 package com.brahvim.androidgamecontroller.server.forms;
 
+import java.util.ArrayList;
+
 import javax.swing.JDialog;
 
 import com.brahvim.androidgamecontroller.RequestCode;
@@ -11,13 +13,11 @@ import uibooster.model.Form;
 
 public class NewConnectionForm extends AgcForm {
     public volatile static boolean noMorePings = false;
-
-    private static NewConnectionForm lastInstance = null;
-    private volatile boolean clientWasRejected, noOptionSelected;
+    private volatile static NewConnectionForm lastInstance = null;
+    private final static ArrayList<NewConnectionForm> INSTANCES = new ArrayList<>();
 
     private NewConnectionForm(AgcClient p_client) {
         final NewConnectionForm THIS = this;
-
         super.build = AgcForm.UI.createForm(StringTable.getString("ConfirmConnection.winTitle"))
                 .addLabel(
                         StringTable.getString("ConfirmConnection.message")
@@ -36,30 +36,45 @@ public class NewConnectionForm extends AgcForm {
                 .addButton(StringTable.getString("ConfirmConnection.no"), new Runnable() {
                     @Override
                     public void run() {
-                        THIS.noOptionSelected = false;
-                        THIS.clientWasRejected = true;
-                        BanRequestForm banForm = new BanRequestForm(
-                                p_client, THIS);
-
                         THIS.close();
-                        while (THIS.isOpen())
-                            ;
-                        banForm.show();
+
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                while (THIS != null)
+                                    ;
+
+                                BanRequestForm banForm = new BanRequestForm(
+                                        p_client, NewConnectionForm.lastInstance);
+                                NewConnectionForm.destroyAllInstances();
+                                banForm.show();
+                            }
+                        }.start();
                     }
                 });
     }
 
     public static NewConnectionForm build(AgcClient p_client) {
-        // If the previous instance ain't done yet, don't make a new one!
-        if (NewConnectionForm.lastInstance != null)
-            return null;
+        while (!(NewConnectionForm.lastInstance == null &&
+                NewConnectionForm.INSTANCES.size() == 0))
+            ;
 
         NewConnectionForm.noMorePings = true;
-        return new NewConnectionForm(p_client);
+        return NewConnectionForm.lastInstance = new NewConnectionForm(p_client);
+    }
+
+    public static synchronized void destroyAllInstances() {
+        for (int i = 0; i < NewConnectionForm.INSTANCES.size(); i++) {
+            NewConnectionForm.INSTANCES.get(i).close();
+        }
+
+        NewConnectionForm.INSTANCES.clear();
     }
 
     @Override
     protected void onShow(Form p_form) {
+        NewConnectionForm.lastInstance = this;
+
         final JDialog WIN = p_form.getWindow();
         WIN.setFocusable(true);
         WIN.requestFocus();
@@ -67,8 +82,7 @@ public class NewConnectionForm extends AgcForm {
 
     @Override
     protected void onClose() {
-        if (!this.clientWasRejected || this.noOptionSelected)
-            NewConnectionForm.noMorePings = false;
+        NewConnectionForm.noMorePings = false;
         NewConnectionForm.lastInstance = null;
     }
 
