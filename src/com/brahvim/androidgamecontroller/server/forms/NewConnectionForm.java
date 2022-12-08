@@ -26,11 +26,11 @@ public class NewConnectionForm extends AgcForm {
                 .addButton(StringTable.getString("ConfirmConnection.yes"), new Runnable() {
                     @Override
                     public void run() {
-                        THIS.noOptionSelected = false;
+                        THIS.close();
+                        // THIS.noOptionSelected = false;
                         AgcServerSocket.getInstance().sendCode(
                                 RequestCode.CLIENT_WAS_REGISTERED, p_client);
                         AgcServerSocket.getInstance().addClientIfAbsent(p_client);
-                        THIS.close();
                     }
                 })
                 .addButton(StringTable.getString("ConfirmConnection.no"), new Runnable() {
@@ -41,12 +41,8 @@ public class NewConnectionForm extends AgcForm {
                         new Thread() {
                             @Override
                             public void run() {
-                                while (THIS != null)
-                                    ;
-
-                                BanRequestForm banForm = new BanRequestForm(
-                                        p_client, NewConnectionForm.lastInstance);
-                                NewConnectionForm.destroyAllInstances();
+                                BanRequestForm banForm = new BanRequestForm(p_client, THIS);
+                                // NewConnectionForm.destroyAllInstances();
                                 banForm.show();
                             }
                         }.start();
@@ -55,8 +51,13 @@ public class NewConnectionForm extends AgcForm {
     }
 
     public static NewConnectionForm build(AgcClient p_client) {
-        while (!(NewConnectionForm.lastInstance == null &&
-                NewConnectionForm.INSTANCES.size() == 0))
+        // while (!(NewConnectionForm.lastInstance == null &&
+        // NewConnectionForm.INSTANCES.size() == 0))
+        // ;
+
+        // NewConnectionForm.destroyAllInstances();
+
+        while (NewConnectionForm.noMorePings)
             ;
 
         NewConnectionForm.noMorePings = true;
@@ -64,8 +65,9 @@ public class NewConnectionForm extends AgcForm {
     }
 
     public static synchronized void destroyAllInstances() {
-        for (int i = 0; i < NewConnectionForm.INSTANCES.size(); i++) {
-            NewConnectionForm.INSTANCES.get(i).close();
+        for (NewConnectionForm f : NewConnectionForm.INSTANCES) {
+            if (f != null)
+                f.close();
         }
 
         NewConnectionForm.INSTANCES.clear();
@@ -73,8 +75,6 @@ public class NewConnectionForm extends AgcForm {
 
     @Override
     protected void onShow(Form p_form) {
-        NewConnectionForm.lastInstance = this;
-
         final JDialog WIN = p_form.getWindow();
         WIN.setFocusable(true);
         WIN.requestFocus();
@@ -84,6 +84,7 @@ public class NewConnectionForm extends AgcForm {
     protected void onClose() {
         NewConnectionForm.noMorePings = false;
         NewConnectionForm.lastInstance = null;
+        // NewConnectionForm.destroyAllInstances();
     }
 
 }

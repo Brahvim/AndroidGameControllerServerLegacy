@@ -6,6 +6,9 @@ import com.brahvim.androidgamecontroller.server.StringTable;
 
 public class BanRequestForm extends AgcForm {
     public BanRequestForm(AgcClient p_client, NewConnectionForm p_conForm) {
+        if (p_conForm != null)
+            p_conForm.close();
+
         final BanRequestForm THIS = this;
         super.build = AgcForm.UI.createForm(
                 StringTable.getString("RejectConnection.winTitle"))

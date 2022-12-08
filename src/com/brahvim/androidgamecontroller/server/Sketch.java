@@ -581,7 +581,8 @@ public class Sketch extends PApplet {
                                     form.show();
                                 };
                             }.start();
-                        }
+                        } else
+                            return;
                     break;
 
                 case CLIENT_SENDS_CONFIG:
