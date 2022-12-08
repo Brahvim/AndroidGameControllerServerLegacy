@@ -95,7 +95,7 @@ public class Sketch extends PApplet {
     // #endregion Fields.
 
     // #region Scenes.
-    // #region Scene methods.
+    // #region Scene management methods.
     public Scene getScene() {
         return this.currentScene;
     }
@@ -125,7 +125,6 @@ public class Sketch extends PApplet {
     // #endregion
 
     {
-
         awaitingConnectionsScene = new Scene() {
             @Override
             public void draw() {
@@ -181,7 +180,7 @@ public class Sketch extends PApplet {
         };
 
         workScene = new Scene() {
-            // #region Fields.
+            // #region Fields. In a scene. Yes.
             AgcConfigurationPacket config;
 
             @SuppressWarnings("unused")
@@ -310,9 +309,7 @@ public class Sketch extends PApplet {
                                 deserialized.getClass().getSimpleName());
                     // System.out.printf("It's ID was `%d`.\n",
                     // ((StateBase) deserialized).controlNumber);
-                    // #endregion
                 }
-
             }
 
             /**
@@ -372,6 +369,7 @@ public class Sketch extends PApplet {
             }
         };
     }
+    // #endregion
     // #endregion
 
     // #region Constructors, `main()`, `settings()`...
