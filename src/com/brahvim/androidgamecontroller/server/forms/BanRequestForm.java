@@ -7,7 +7,7 @@ import com.brahvim.androidgamecontroller.server.StringTable;
 import uibooster.model.Form;
 
 public class BanRequestForm extends AgcForm {
-    public BanRequestForm(AgcClient p_client, NewConnectionForm p_conForm) {
+    public BanRequestForm(AgcClient p_client) {
         final BanRequestForm THIS = this;
         super.build = AgcForm.UI.createForm(
                 StringTable.getString("RejectConnection.winTitle"))
@@ -28,6 +28,8 @@ public class BanRequestForm extends AgcForm {
                 });
     }
 
+    // ...yeah, I'll actually use this callback instead of inlining.
+    // Don't worry about optimization!
     @Override
     protected void onClose(Form p_form) {
         NewConnectionForm.noMorePings = false;

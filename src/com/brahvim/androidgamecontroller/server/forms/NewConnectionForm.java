@@ -1,7 +1,5 @@
 package com.brahvim.androidgamecontroller.server.forms;
 
-import java.util.ArrayList;
-
 import javax.swing.JDialog;
 
 import com.brahvim.androidgamecontroller.RequestCode;
@@ -13,8 +11,6 @@ import uibooster.model.Form;
 
 public class NewConnectionForm extends AgcForm {
     public volatile static boolean noMorePings = false;
-    private volatile static NewConnectionForm instance = null;
-    private final static ArrayList<NewConnectionForm> INSTANCES = new ArrayList<>();
 
     private boolean startedBanForm = false;
 
@@ -41,11 +37,12 @@ public class NewConnectionForm extends AgcForm {
                         THIS.startedBanForm = true;
                         THIS.close();
 
+                        // ...do this async or you'll break my app!:
                         new Thread() {
+                            // ...I have no idea why!
                             @Override
                             public void run() {
-                                BanRequestForm banForm = new BanRequestForm(p_client, THIS);
-                                // NewConnectionForm.destroyAllInstances();
+                                BanRequestForm banForm = new BanRequestForm(p_client);
                                 banForm.show();
                             }
                         }.start();
@@ -53,30 +50,12 @@ public class NewConnectionForm extends AgcForm {
                 });
     }
 
-    public static void build(AgcClient p_client) {
-        // NewConnectionForm.destroyAllInstances();
-        // while (NewConnectionForm.noMorePings)
-        // ;
-
-        while (NewConnectionForm.noMorePings) {
-            System.out.println("Instance is not yet `null`...");
-        }
+    public static NewConnectionForm build(AgcClient p_client) {
+        while (NewConnectionForm.noMorePings)
+            ;
 
         NewConnectionForm.noMorePings = true;
-        NewConnectionForm.instance = new NewConnectionForm(p_client);
-    }
-
-    public static NewConnectionForm getInstance() {
-        return NewConnectionForm.instance;
-    }
-
-    public static synchronized void destroyAllInstances() {
-        for (NewConnectionForm f : NewConnectionForm.INSTANCES) {
-            if (f != null)
-                f.close();
-        }
-
-        NewConnectionForm.INSTANCES.clear();
+        return new NewConnectionForm(p_client);
     }
 
     @Override
@@ -90,7 +69,6 @@ public class NewConnectionForm extends AgcForm {
     protected void onClose(Form p_form) {
         if (!this.startedBanForm)
             NewConnectionForm.noMorePings = false;
-        // NewConnectionForm.destroyAllInstances();
     }
 
 }
