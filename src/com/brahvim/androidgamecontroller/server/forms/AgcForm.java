@@ -61,7 +61,7 @@ public class AgcForm {
         return this.form;
     }
 
-    // Can't be overriden since it's `private`!
+    // Can't be overriden since it's `private`! No `final` modifier.
     private void makeFormRich() {
         final AgcForm AGC_FORM = this;
         final Form FORM = this.form;
@@ -79,7 +79,7 @@ public class AgcForm {
         WIN.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent p_windowEvent) {
-                AGC_FORM.onClose();
+                AGC_FORM.onClose(AGC_FORM.form);
             }
         });
     }
@@ -95,7 +95,7 @@ public class AgcForm {
     public final void close() {
         if (this.form != null)
             this.form.close();
-        this.onClose();
+        this.onClose(this.form);
     }
 
     // #region Callbacks!~
@@ -108,7 +108,7 @@ public class AgcForm {
     protected void onBlockingShow(Form p_form) {
     }
 
-    protected void onClose() {
+    protected void onClose(Form p_form) {
     }
     // #endregion
 

@@ -569,18 +569,16 @@ public class Sketch extends PApplet {
                     // If the client isn't already in our list,
                     if (!AgcServerSocket.getInstance().hasClient(toAdd))
                         if (!NewConnectionForm.noMorePings) {
-                            new Thread() {
-                                public void run() {
-                                    if (NewConnectionForm.noMorePings)
-                                        return;
+                            // new Thread() {
+                            // public void run() {
 
-                                    NewConnectionForm form = NewConnectionForm.build(toAdd);
-                                    if (form == null)
-                                        return;
+                            // if (NewConnectionForm.noMorePings)
+                            // return;
+                            NewConnectionForm.build(toAdd);
+                            NewConnectionForm.getInstance().show();
 
-                                    form.show();
-                                };
-                            }.start();
+                            // };
+                            // }.start();
                         } else
                             return;
                     break;

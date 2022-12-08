@@ -13,16 +13,18 @@ import uibooster.model.Form;
 
 public class NewConnectionForm extends AgcForm {
     public volatile static boolean noMorePings = false;
-    private volatile static NewConnectionForm lastInstance = null;
+    private volatile static NewConnectionForm instance = null;
     private final static ArrayList<NewConnectionForm> INSTANCES = new ArrayList<>();
+
+    private boolean startedBanForm = false;
 
     private NewConnectionForm(AgcClient p_client) {
         final NewConnectionForm THIS = this;
-        super.build = AgcForm.UI.createForm(StringTable.getString("ConfirmConnection.winTitle"))
-                .addLabel(
-                        StringTable.getString("ConfirmConnection.message")
-                                .replace("<name>", p_client.getDeviceName())
-                                .replace("<address>", p_client.getIp()))
+        super.build = AgcForm.UI.createForm(
+                StringTable.getString("ConfirmConnection.winTitle"))
+                .addLabel(StringTable.getString("ConfirmConnection.message")
+                        .replace("<name>", p_client.getDeviceName())
+                        .replace("<address>", p_client.getIp()))
                 .addButton(StringTable.getString("ConfirmConnection.yes"), new Runnable() {
                     @Override
                     public void run() {
@@ -36,6 +38,7 @@ public class NewConnectionForm extends AgcForm {
                 .addButton(StringTable.getString("ConfirmConnection.no"), new Runnable() {
                     @Override
                     public void run() {
+                        THIS.startedBanForm = true;
                         THIS.close();
 
                         new Thread() {
@@ -50,18 +53,21 @@ public class NewConnectionForm extends AgcForm {
                 });
     }
 
-    public static NewConnectionForm build(AgcClient p_client) {
-        // while (!(NewConnectionForm.lastInstance == null &&
-        // NewConnectionForm.INSTANCES.size() == 0))
+    public static void build(AgcClient p_client) {
+        // NewConnectionForm.destroyAllInstances();
+        // while (NewConnectionForm.noMorePings)
         // ;
 
-        // NewConnectionForm.destroyAllInstances();
-
-        while (NewConnectionForm.noMorePings)
-            ;
+        while (NewConnectionForm.noMorePings) {
+            System.out.println("Instance is not yet `null`...");
+        }
 
         NewConnectionForm.noMorePings = true;
-        return NewConnectionForm.lastInstance = new NewConnectionForm(p_client);
+        NewConnectionForm.instance = new NewConnectionForm(p_client);
+    }
+
+    public static NewConnectionForm getInstance() {
+        return NewConnectionForm.instance;
     }
 
     public static synchronized void destroyAllInstances() {
@@ -81,9 +87,9 @@ public class NewConnectionForm extends AgcForm {
     }
 
     @Override
-    protected void onClose() {
-        NewConnectionForm.noMorePings = false;
-        NewConnectionForm.lastInstance = null;
+    protected void onClose(Form p_form) {
+        if (!this.startedBanForm)
+            NewConnectionForm.noMorePings = false;
         // NewConnectionForm.destroyAllInstances();
     }
 

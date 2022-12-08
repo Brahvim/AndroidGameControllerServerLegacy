@@ -4,17 +4,15 @@ import com.brahvim.androidgamecontroller.server.AgcClient;
 import com.brahvim.androidgamecontroller.server.AgcServerSocket;
 import com.brahvim.androidgamecontroller.server.StringTable;
 
+import uibooster.model.Form;
+
 public class BanRequestForm extends AgcForm {
     public BanRequestForm(AgcClient p_client, NewConnectionForm p_conForm) {
-        if (p_conForm != null)
-            p_conForm.close();
-
         final BanRequestForm THIS = this;
         super.build = AgcForm.UI.createForm(
                 StringTable.getString("RejectConnection.winTitle"))
-                .addLabel(
-                        StringTable.getString("RejectConnection.message")
-                                .replace("<name>", p_client.getDeviceName()))
+                .addLabel(StringTable.getString("RejectConnection.message")
+                        .replace("<name>", p_client.getDeviceName()))
                 .addButton(StringTable.getString("RejectConnection.yes"), new Runnable() {
                     @Override
                     public void run() {
@@ -31,7 +29,7 @@ public class BanRequestForm extends AgcForm {
     }
 
     @Override
-    protected void onClose() {
+    protected void onClose(Form p_form) {
         NewConnectionForm.noMorePings = false;
     }
 }
