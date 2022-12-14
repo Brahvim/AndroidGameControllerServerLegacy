@@ -373,11 +373,11 @@ public class Sketch extends PApplet {
     // #endregion
 
     // #region Constructors, `main()`, `settings()`...
-    public Sketch() {
+    private Sketch() {
         Sketch.SKETCHES.add(this);
     }
 
-    public Sketch(AgcClient p_client) {
+    private Sketch(AgcClient p_client) {
         this();
         this.client = p_client;
     }
