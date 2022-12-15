@@ -35,39 +35,36 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
         p_graphics.fill(230, this.state.pressed ? 100 : 50);
         p_graphics.noStroke();
 
+        // #region Drawing the touchpad.
         p_graphics.pushMatrix();
 
-        // #region Drawing the touchpad.
         // Touchpads ain't got any rotation! (Yet!...)
         p_graphics.scale(this.config.scale.x, this.config.scale.x);
         p_graphics.rectMode(PConstants.CENTER);
         p_graphics.rect(0, 0, 1.2f, 0.55f,
                 0.1f, 0.1f, 0.1f, 0.1f);
-        // #endregion
 
         p_graphics.popMatrix();
+        // #endregion
 
+        // Drawing the touch!:
         if (super.state.pressed) {
-            System.out.println(super.state.touches.size());
-            for (int i = 0; i < this.state.touches.size(); i++) {
-                PVector v = super.state.touches.get(i);
+            p_graphics.pushMatrix();
 
-                v.x = PApplet.map(v.x, 0,
-                        this.parentSketch.client.getConfig().screenDimensions.x,
-                        0, this.parentSketch.width);
-                v.x = PApplet.map(v.y, 0,
-                        this.parentSketch.client.getConfig().screenDimensions.y,
-                        0, this.parentSketch.height);
+            p_graphics.translate(
+                    PApplet.map(super.state.mouse.x, 0,
+                            this.parentSketch.client.getConfig().screenDimensions.x,
+                            0, this.parentSketch.width),
+                    PApplet.map(super.state.mouse.y, 0,
+                            this.parentSketch.client.getConfig().screenDimensions.y,
+                            0, this.parentSketch.height));
 
-                System.out.println(v);
+            System.out.println(super.state.mouse);
 
-                p_graphics.pushMatrix();
-                p_graphics.translate(v.x, v.y);
-                p_graphics.scale(20);
-                p_graphics.fill(0, 255, 0);
-                p_graphics.ellipse(0, 0, 1, 1);
-                p_graphics.popMatrix();
-            }
+            p_graphics.scale(20);
+            p_graphics.fill(0, 255, 0);
+            p_graphics.ellipse(0, 0, 1, 1);
+            p_graphics.popMatrix();
         }
 
         p_graphics.popMatrix();

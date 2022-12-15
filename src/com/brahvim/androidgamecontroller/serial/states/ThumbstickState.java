@@ -2,6 +2,7 @@ package com.brahvim.androidgamecontroller.serial.states;
 
 public class ThumbstickState extends StateBase {
     public final static long serialVersionUID = -7661851153653793782L;
+    public boolean pressed, ppressed;
     public float mag, dir;
 
     public ThumbstickState() {

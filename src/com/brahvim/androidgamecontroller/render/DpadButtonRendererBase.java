@@ -15,6 +15,7 @@ public class DpadButtonRendererBase {
     public DpadButtonRendererBase(@NotNull DpadButtonConfig p_config) {
         this.config = p_config;
         this.state = new DpadButtonState();
+        this.state.controlNumber = this.config.controlNumber;
     }
 
     public void draw(@NotNull PGraphics p_graphics) {

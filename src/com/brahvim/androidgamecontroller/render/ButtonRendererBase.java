@@ -15,6 +15,7 @@ public class ButtonRendererBase {
     public ButtonRendererBase(@NotNull ButtonConfig p_config) {
         this.config = p_config;
         this.state = new ButtonState();
+        this.state.controlNumber = this.config.controlNumber;
     }
 
     public void draw(@NotNull PGraphics p_graphics) {

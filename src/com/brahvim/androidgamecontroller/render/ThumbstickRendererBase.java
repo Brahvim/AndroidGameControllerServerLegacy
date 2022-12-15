@@ -19,6 +19,7 @@ public class ThumbstickRendererBase {
   public ThumbstickRendererBase(@NotNull ThumbstickConfig p_config) {
     this.config = p_config;
     this.state = new ThumbstickState();
+    this.state.controlNumber = this.config.controlNumber;
 
     this.draggingTouch = new PVector();
     this.innerCircleScale = PVector.mult(this.config.scale, 0.25f);

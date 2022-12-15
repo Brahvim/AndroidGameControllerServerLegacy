@@ -10,7 +10,7 @@ public class StateBase implements Serializable {
 
     public long millis;
     public int controlNumber;
-    public boolean pressed, ppressed; // May have different meanings. May be refreshed
+    // public boolean pressed, ppressed; // May have different meanings. May be refreshed
     // either in the loop, or during events. Depends on the implementation.
 
     public StateBase() {

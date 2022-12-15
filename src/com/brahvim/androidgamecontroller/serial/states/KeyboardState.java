@@ -2,6 +2,7 @@ package com.brahvim.androidgamecontroller.serial.states;
 
 public class KeyboardState extends StateBase {
     public final static long serialVersionUID = -3605879719869452598L;
+    public boolean pressed, ppressed;
 
     public KeyboardState() {
     }
