@@ -9,24 +9,28 @@ import com.brahvim.androidgamecontroller.RequestCode;
 import com.brahvim.androidgamecontroller.UdpSocket;
 
 /**
- * Singleton.
+ * Singleton!~
  */
 public class AgcServerSocket extends UdpSocket {
+    // #region Fields.
+    public ArrayList<AgcClient> requestQueue;
+
     private static AgcServerSocket INSTANCE;
 
     private ArrayList<AgcClient> clients;
     // public static ArrayList<AgcClient> peers;
     // The ones that are currently being used! ...:D!
     private ArrayList<AgcClient> bannedClients;
+    // #endregion
 
     private AgcServerSocket() {
         super(RequestCode.SERVER_PORT);
         this.clients = new ArrayList<>();
+        this.requestQueue = new ArrayList<>();
         this.bannedClients = new ArrayList<>();
     }
 
-    // Singleton stuff:
-
+    // #region Singleton stuff:
     public static AgcServerSocket getInstance() {
         return AgcServerSocket.INSTANCE;
     }
@@ -34,21 +38,7 @@ public class AgcServerSocket extends UdpSocket {
     public static AgcServerSocket init() {
         return AgcServerSocket.INSTANCE = new AgcServerSocket();
     }
-
-    /**
-     * @return An {@linkplain ArrayList} of {@linkplain AgcClient}s.
-     */
-    public ArrayList<AgcClient> getClients() {
-        return this.clients;
-    }
-
-    /**
-     * @return An {@linkplain ArrayList} of banned
-     *         {@linkplain AgcClient}s.
-     */
-    public ArrayList<AgcClient> getBannedClients() {
-        return this.bannedClients;
-    }
+    // #endregion
 
     // #region Client management methods.
     public void addClientIfAbsent(AgcClient p_client) {
@@ -116,15 +106,35 @@ public class AgcServerSocket extends UdpSocket {
         if (clientPort == -1)
             throw new RuntimeException("WHAT?!");
 
-        this.sendCode(RequestCode.CLIENT_WAS_BANNED, p_ip, p_port);
-        this.bannedClients.add(new AgcClient(p_ip, clientPort, clientName));
+        this.banClient(client);
     }
 
     public void banClient(AgcClient p_client) {
         this.sendCode(RequestCode.CLIENT_WAS_BANNED, p_client);
 
+        for (Sketch s : Sketch.SKETCHES) {
+            if (s.client.equals(p_client)) {
+
+            }
+        }
+
         this.clients.remove(p_client);
         this.bannedClients.add(p_client);
+    }
+
+    /**
+     * @return An {@linkplain ArrayList} of {@linkplain AgcClient}s.
+     */
+    public ArrayList<AgcClient> getClients() {
+        return this.clients;
+    }
+
+    /**
+     * @return An {@linkplain ArrayList} of banned
+     *         {@linkplain AgcClient}s.
+     */
+    public ArrayList<AgcClient> getBannedClients() {
+        return this.bannedClients;
     }
 
     public boolean isClientBanned(AgcClient p_client) {
@@ -330,8 +340,12 @@ public class AgcServerSocket extends UdpSocket {
     // #region Overrides.
     @Override
     public void onReceive(@NotNull byte[] p_data, String p_ip, int p_port) {
-        for (Sketch s : Sketch.SKETCHES)
-            s.onReceive(p_data, p_ip, p_port);
+        synchronized (Sketch.SKETCHES) {
+            for (int i = 0, length = Sketch.SKETCHES.size(); i < length; i++) {
+                Sketch s = Sketch.SKETCHES.get(i);
+                s.onReceive(p_data, p_ip, p_port);
+            }
+        }
     }
 
     @Override

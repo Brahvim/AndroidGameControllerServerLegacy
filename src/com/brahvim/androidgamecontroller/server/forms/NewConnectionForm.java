@@ -29,6 +29,7 @@ public class NewConnectionForm extends AgcForm {
                         AgcServerSocket.getInstance().sendCode(
                                 RequestCode.CLIENT_WAS_REGISTERED, p_client);
                         AgcServerSocket.getInstance().addClientIfAbsent(p_client);
+                        AgcServerSocket.getInstance().requestQueue.remove(p_client);
                     }
                 })
                 .addButton(StringTable.getString("ConfirmConnection.no"), new Runnable() {

@@ -7,7 +7,6 @@ public class TouchpadState extends StateBase {
     // Better do it anyway! This is software development!
 
     public PVector mouse; // The `z` holds pressure or area. Probably area.
-    public boolean pressed;
     public boolean doubleTapped, pdoubleTapped;
 
     public TouchpadState() {

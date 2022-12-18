@@ -64,6 +64,11 @@ public enum RequestCode {
     MAX_DEVICES(),
 
     /**
+     * The server operator is choosing whether or not the client may join.
+     */
+    CLIENT_IS_BEING_CONSIDERED(),
+
+    /**
      * If the server operator accepts a client's `ADD_ME`, the server sends this.
      */
     CLIENT_WAS_REGISTERED(),
@@ -83,11 +88,20 @@ public enum RequestCode {
     /**
      * The client will send extra data along with this request.
      * The *extra data* contains ONLY the bytes of a serialized
-     * `com.brahvim.androidgamecontroller.serial.config.ConfigurationPacket` object.
+     * {@link com.brahvim.androidgamecontroller.serial.configs.AgcConfigurationPacket}
+     * object.
      */
     CLIENT_SENDS_CONFIG(),
 
-    SERVER_GOT_CONFIG();
+    /**
+     * The server has started listening to the client!
+     */
+    SERVER_GOT_CONFIG(),
+
+    /**
+     * The server uses this to check if a client is active or not.
+     */
+    ALIVE_PING();
     // endregion
 
     // region Non-Enum Fields.
@@ -157,7 +171,7 @@ public enum RequestCode {
 
         if (ret.length - RequestCode.EXTRA_DATA_START >= 0)
             System.arraycopy(p_data, RequestCode.EXTRA_DATA_START, ret,
-              0, ret.length);
+                    0, ret.length);
 
         return ret;
     }

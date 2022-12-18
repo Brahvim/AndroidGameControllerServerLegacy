@@ -124,6 +124,7 @@ public class Sketch extends PApplet {
     }
     // #endregion
 
+    // The scenes!:
     {
         awaitingConnectionsScene = new Scene() {
             @Override
@@ -134,15 +135,17 @@ public class Sketch extends PApplet {
                         cx + sin(millis() * 0.001f) * 25, cy);
             }
 
+            // #region Events.
             @Override
             public void mouseClicked() {
-                scenes_settingsMenuMsCheck();
+                SKETCH.SKETCH.scenes_settingsMenuMsCheck();
             }
 
             @Override
             public void keyPressed() {
-                scenes_settingsMenuKbCheck();
+                SKETCH.SKETCH.scenes_settingsMenuKbCheck();
             }
+            // #endregion
         };
 
         exitScene = new Scene() {
@@ -155,7 +158,7 @@ public class Sketch extends PApplet {
                 this.fadeWave.endWhenAngleIs(90);
                 this.fadeWave.start();
 
-                // AgcServerSocket.tellAllClients(RequestCode.SERVER_CLOSE);
+                AgcServerSocket.getInstance().tellAllClients(RequestCode.SERVER_CLOSE);
                 AgcServerSocket.getInstance().close();
             }
 
@@ -197,6 +200,12 @@ public class Sketch extends PApplet {
                 System.out.println("CONGRATULATIIIIIIONS! You made it to the WORK scene!");
 
                 this.config = client.getConfig();
+
+                // TODO: Remove this if issues exist.
+                if (this.config == null) {
+                    SKETCH.setScene(SKETCH.awaitingConnectionsScene);
+                }
+
                 // Renderer initialization:
                 this.buttonRenderers = new ArrayList<>(config.buttons.size());
                 this.dpadButtonRenderers = new ArrayList<>(config.dpadButtons.size());
@@ -218,7 +227,6 @@ public class Sketch extends PApplet {
                         toAdd.state.controlNumber = c.controlNumber;
                         buttonRenderers.add(toAdd);
                     } catch (AWTException e) {
-                        e.printStackTrace();
                     }
                 }
 
@@ -281,8 +289,11 @@ public class Sketch extends PApplet {
 
             @Override
             public void draw() {
-                for (ServerRenderer r : ServerRenderer.all) {
-                    r.draw(gr);
+                synchronized (ServerRenderer.all) {
+                    for (int i = 0, length = ServerRenderer.all.size(); i < length; i++) {
+                        ServerRenderer r = ServerRenderer.all.get(i);
+                        r.draw(gr);
+                    }
                 }
             }
 
@@ -293,9 +304,9 @@ public class Sketch extends PApplet {
                         case CLIENT_CLOSE:
                             AgcServerSocket.getInstance().removeClient(p_client);
                             if (Sketch.SKETCHES.size() == 1)
-                                setScene(awaitingConnectionsScene);
+                                SKETCH.setScene(awaitingConnectionsScene);
                             else
-                                exit();
+                                SKETCH.exit();
                             break;
 
                         default:
@@ -360,14 +371,15 @@ public class Sketch extends PApplet {
 
             @Override
             public void mouseClicked() {
-                scenes_settingsMenuMsCheck();
+                SKETCH.scenes_settingsMenuMsCheck();
             }
 
             @Override
             public void keyPressed() {
-                scenes_settingsMenuKbCheck();
+                SKETCH.scenes_settingsMenuKbCheck();
             }
         };
+
     }
     // #endregion
     // #endregion
@@ -405,6 +417,7 @@ public class Sketch extends PApplet {
     }
     // #endregion
 
+    // #region Processing sketch structure.
     @Override
     public void setup() {
         this.updateRatios();
@@ -508,13 +521,14 @@ public class Sketch extends PApplet {
         this.pwidth = super.width;
         this.pheight = super.height;
     }
+    // #endregion
 
-    private void myExit() {
+    // #region Exit (all) function and (instance) method.
+    public void agcQuickExit() {
         if (this.agcExitCalled)
             return;
         this.agcExitCalled = true;
 
-        System.out.println("AGC exits!");
         this.setScene(this.exitScene);
     }
 
@@ -523,9 +537,12 @@ public class Sketch extends PApplet {
         AgcServerSocket.getInstance().tellAllClients(RequestCode.SERVER_CLOSE);
 
         for (Sketch s : Sketch.SKETCHES) {
-            s.myExit();
+            s.agcQuickExit();
         }
+
+        System.out.println("AGC exits!");
     }
+    // #endregion
 
     public static Sketch createNewInstance(AgcClient p_client) {
         Sketch sketch = new Sketch(p_client);
@@ -544,52 +561,87 @@ public class Sketch extends PApplet {
         if (sender == null) {
             sender = new AgcClient(p_ip, p_port, new String(
                     RequestCode.getPacketExtras(p_data)));
-            System.out.printf("%s wants to connect!\n", sender.getDeviceName());
         } else
             System.out.printf("%s sent a message.\n", sender.getDeviceName());
 
         if (this.currentScene != null)
-            if (currentScene == awaitingConnectionsScene)
-                ; // this.currentScene.onReceive(p_data, sender); return;
-            else if (currentScene == workScene) {
-                this.currentScene.onReceive(p_data, sender);
-                return;
-            } else if (currentScene == exitScene)
-                ;
+            this.currentScene.onReceive(p_data, sender);
+
+        // All scenes reserve the right to data, not just a few select ones!:
+        /*
+         * if (this.currentScene == this.awaitingConnectionsScene)
+         * ; // this.currentScene.onReceive(p_data, sender); return;
+         * else if (this.currentScene == this.workScene) {
+         * this.currentScene.onReceive(p_data, sender);
+         * return;
+         * } else if (this.currentScene == this.exitScene)
+         * ;
+         */
 
         if (RequestCode.packetHasCode(p_data)) {
             switch (RequestCode.fromReceivedPacket(p_data)) {
                 case ADD_ME:
-                    final AgcClient toAdd = sender;
+                    System.out.printf("%s wants to connect!\n", sender.getDeviceName());
+
+                    AgcClient toAdd = sender;
                     if (AgcServerSocket.getInstance().isClientBanned(toAdd))
                         return;
 
+                    // TODO: Solve the queue list bug and this:
+
+                    // *Me later:*
+                    // Wait, there's a bug - O_o?
+                    // There isn't one, meh :|
+                    if (AgcServerSocket.getInstance().hasClient(sender)) {
+                        AgcServerSocket.getInstance().sendCode(RequestCode.CLIENT_WAS_REGISTERED, sender);
+                    }
+
                     // If the client isn't already in our list,
-                    if (!AgcServerSocket.getInstance().hasClient(toAdd))
+                    if (!(AgcServerSocket.getInstance().hasClient(toAdd)
+                            // #region Big comment, LOL.
+                            // Storing only arrays of hashcodes to compare
+                            // would've been a good optimization, heh.
+                            // ...which I OF COURSE, don't need to do.
+
+                            // Pointers are just integers! Neat!
+                            // (...but `AgcClient::equals()` ain't neat! :joy:)
+                            // (Imagine if `equals()` *actually* used hashcodes.
+                            // ...that would fail *pr'tty* quickly.)
+                            // #endregion
+                            || AgcServerSocket.getInstance().requestQueue.contains(sender))) {
                         // Yes, yes, `NewConnectionsForm.build()` will also check this,
                         // but the app breaks if you remove this check ¯\_(ツ)_/¯
                         if (!NewConnectionForm.noMorePings) {
                             NewConnectionForm.build(toAdd).show();
                         } else
                             return;
-                    break;
+                        break;
+                    }
+                    AgcServerSocket.getInstance().requestQueue.add(sender);
 
                 case CLIENT_SENDS_CONFIG:
+                    AgcServerSocket.getInstance().requestQueue.remove(sender);
+
+                    Sketch sketch = Sketch.SKETCHES.get(0);
+
                     if (AgcServerSocket.getInstance().getClients().size() == 1) {
-                        Sketch sketch = Sketch.SKETCHES.get(0);
-                        sender.setConfig((AgcConfigurationPacket) ByteSerial.decode(
-                                RequestCode.getPacketExtras(p_data)));
+                        sender.setConfig((AgcConfigurationPacket) ByteSerial
+                                .decode(RequestCode.getPacketExtras(p_data)));
                         sketch.client = sender;
                         sketch.setScene(sketch.workScene);
-                        return;
+                    } else {
+                        Sketch.createNewInstance(sender);
                     }
-
-                    Sketch.createNewInstance(sender);
                     break;
+
+                // Should never happen thatnks to the symlinks..:
 
                 default:
-                    System.out.println(new String(p_data));
-                    break;
+                    try {
+                        System.out.printf("Unknown request code packet from sender `%s`: `%s`.",
+                                sender.getDeviceName(), new String(p_data));
+                    } catch (IllegalArgumentException e) {
+                    }
             }
         }
 
