@@ -19,7 +19,7 @@ public class ByteSerial {
 
         try {
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                 ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+                    ObjectOutputStream oos = new ObjectOutputStream(bos)) {
                 bos.flush();
                 oos.flush();
 
@@ -40,10 +40,10 @@ public class ByteSerial {
     }
 
     @Nullable
-    public static Object decode(byte[] p_data) {
+    public static Object decode(byte[] p_data) throws IOException {
         try {
             try (ByteArrayInputStream bis = new ByteArrayInputStream(p_data);
-                 ObjectInputStream ois = new ObjectInputStream(bis)) {
+                    ObjectInputStream ois = new ObjectInputStream(bis)) {
                 return ois.readObject();
             }
         } catch (IOException | ClassNotFoundException e) {

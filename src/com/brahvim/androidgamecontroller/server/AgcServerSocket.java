@@ -1,5 +1,6 @@
 package com.brahvim.androidgamecontroller.server;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -7,6 +8,9 @@ import org.jetbrains.annotations.NotNull;
 
 import com.brahvim.androidgamecontroller.RequestCode;
 import com.brahvim.androidgamecontroller.UdpSocket;
+import com.brahvim.androidgamecontroller.serial.ByteSerial;
+import com.brahvim.androidgamecontroller.serial.configs.AgcConfigurationPacket;
+import com.brahvim.androidgamecontroller.server.forms.NewConnectionForm;
 
 /**
  * Singleton!~
@@ -41,7 +45,7 @@ public class AgcServerSocket extends UdpSocket {
     // #endregion
 
     // #region Client management methods.
-    public void addClientIfAbsent(AgcClient p_client) {
+    public void addClientIfAbsent(@NotNull AgcClient p_client) {
         boolean absent = true;
         for (AgcClient c : this.clients)
             if (c.equals(p_client))
@@ -52,7 +56,7 @@ public class AgcServerSocket extends UdpSocket {
         }
     }
 
-    public boolean hasClient(AgcClient p_client) {
+    public boolean hasClient(@NotNull AgcClient p_client) {
         return this.clients.contains(p_client);
     }
 
@@ -66,7 +70,7 @@ public class AgcServerSocket extends UdpSocket {
         }
     }
 
-    public void removeClient(AgcClient p_client) {
+    public void removeClient(@NotNull AgcClient p_client) {
         this.clients.remove(p_client);
     }
 
@@ -109,7 +113,7 @@ public class AgcServerSocket extends UdpSocket {
         this.banClient(client);
     }
 
-    public void banClient(AgcClient p_client) {
+    public void banClient(@NotNull AgcClient p_client) {
         this.sendCode(RequestCode.CLIENT_WAS_BANNED, p_client);
 
         for (Sketch s : Sketch.SKETCHES) {
@@ -137,7 +141,7 @@ public class AgcServerSocket extends UdpSocket {
         return this.bannedClients;
     }
 
-    public boolean isClientBanned(AgcClient p_client) {
+    public boolean isClientBanned(@NotNull AgcClient p_client) {
         return this.bannedClients.size() == 0 ? false
                 : this.bannedClients.contains(p_client);
     }
@@ -165,7 +169,7 @@ public class AgcServerSocket extends UdpSocket {
      * this.bannedIpStrings.remove(p_ip);
      * }
      * 
-     * public void banClient(AgcClient p_client) {
+     * public void banClient(@NotNull AgcClient p_client) {
      * this.bannedIpStrings.add(p_client.getIp());
      * this.bannedClientNames.add(p_client.deviceName);
      * }
@@ -192,7 +196,7 @@ public class AgcServerSocket extends UdpSocket {
      * this.bannedClientNames.add(name);
      * }
      * 
-     * public boolean isClientBanned(@NotNull AgcClient p_client) {
+     * public boolean isClientBanned(@NotNull @NotNull AgcClient p_client) {
      * if (this.bannedIpStrings.size() == 0)
      * return false;
      * 
@@ -207,11 +211,11 @@ public class AgcServerSocket extends UdpSocket {
      */
 
     // Using `AgcServerSocket.AgcClient`s:
-    public void sendCode(RequestCode p_code, AgcClient p_client) {
+    public void sendCode(RequestCode p_code, @NotNull AgcClient p_client) {
         this.sendCode(p_code, p_client.getIp(), p_client.getPort());
     }
 
-    public void sendCode(RequestCode p_code, String p_extraData, AgcClient p_client) {
+    public void sendCode(RequestCode p_code, String p_extraData, @NotNull AgcClient p_client) {
         this.sendCode(p_code, p_extraData, p_client.getIp(), p_client.getPort());
     }
 
@@ -340,12 +344,121 @@ public class AgcServerSocket extends UdpSocket {
     // #region Overrides.
     @Override
     public void onReceive(@NotNull byte[] p_data, String p_ip, int p_port) {
-        synchronized (Sketch.SKETCHES) {
-            for (int i = 0, length = Sketch.SKETCHES.size(); i < length; i++) {
-                Sketch s = Sketch.SKETCHES.get(i);
-                s.onReceive(p_data, p_ip, p_port);
+        AgcClient sender = null;
+        boolean isSenderKnown = true;
+
+        // #region Give `sender` a value.
+        for (AgcClient c : AgcServerSocket.getInstance().getClients()) {
+            if (c.getIp().equals(p_ip)) {
+                sender = c;
             }
         }
+
+        if (sender == null) {
+            isSenderKnown = false;
+            sender = new AgcClient(p_ip, p_port, new String(
+                    RequestCode.getPacketExtras(p_data)));
+        }
+        // #endregion
+
+        // #region Send event to all sketches' scenes
+        synchronized (Sketch.SKETCHES) {
+            for (Sketch s : Sketch.SKETCHES) {
+                if (s.currentScene != null)
+                    if (s.currentScene.onReceive(p_data, sender))
+                        break;
+            }
+        }
+        // #endregion
+
+        // All scenes reserve the right to data, not just a few select ones!:
+        /*
+         * if (this.currentScene == this.awaitingConnectionsScene)
+         * ; // this.currentScene.onReceive(p_data, sender); return;
+         * else if (this.currentScene == this.workScene) {
+         * this.currentScene.onReceive(p_data, sender);
+         * return;
+         * } else if (this.currentScene == this.exitScene)
+         * ;
+         */
+
+        if (RequestCode.packetHasCode(p_data)) {
+            switch (RequestCode.fromReceivedPacket(p_data)) {
+                case ADD_ME:
+                    System.out.printf("%s wants to connect!\n", sender.getDeviceName());
+
+                    AgcClient toAdd = sender;
+                    if (AgcServerSocket.getInstance().isClientBanned(toAdd))
+                        return;
+
+                    // TODO: Solve the queue list bug and this:
+
+                    // *Me later:*
+                    // Wait, there's a bug - O_o?
+                    // There isn't one, meh :|
+                    if (AgcServerSocket.getInstance().hasClient(sender)) {
+                        AgcServerSocket.getInstance().sendCode(RequestCode.CLIENT_WAS_REGISTERED, sender);
+                    }
+
+                    // If the client isn't already in our list,
+                    if (!(AgcServerSocket.getInstance().hasClient(toAdd)
+                            // #region Big comment, LOL.
+                            // Storing only arrays of hashcodes to compare
+                            // would've been a good optimization, heh.
+                            // ...which I OF COURSE, don't need to do.
+
+                            // Pointers are just integers! Neat!
+                            // (...but `AgcClient::equals()` ain't neat! :joy:)
+                            // (Imagine if `equals()` *actually* used hashcodes.
+                            // ...that would fail *pr'tty* quickly.)
+                            // #endregion
+                            || AgcServerSocket.getInstance().requestQueue.contains(sender))) {
+                        // Yes, yes, `NewConnectionsForm.build()` will also check this,
+                        // but the app breaks if you remove this check ¯\_(ツ)_/¯
+                        if (!NewConnectionForm.noMorePings) {
+                            NewConnectionForm.build(toAdd).show();
+                        } else
+                            return;
+                    }
+                    AgcServerSocket.getInstance().requestQueue.add(sender);
+
+                case CLIENT_SENDS_CONFIG:
+                    // TODO: Make sure no other sketch uses `Sketch.createNewInstance` this!
+
+                    AgcServerSocket.getInstance().requestQueue.remove(sender);
+
+                    Sketch firstSketch = Sketch.SKETCHES.get(0);
+
+                    if (AgcServerSocket.getInstance().getClients().size() == 1) {
+                        try {
+                            sender.setConfig((AgcConfigurationPacket) ByteSerial
+                                    .decode(RequestCode.getPacketExtras(p_data)));
+                        } catch (IOException e) {
+                            firstSketch.setScene(firstSketch.awaitingConnectionsScene);
+                        }
+
+                        firstSketch.client = sender;
+                        firstSketch.setScene(firstSketch.workScene);
+                    } else {
+                        Sketch.createNewInstance(sender);
+                    }
+                    break;
+
+                // Should never happen thatnks to the symlinks..:
+
+                default:
+                    try {
+                        System.out.printf(
+                                "Unknown request code packet from sender of IP `%s`: `%s`.",
+                                sender.getIp(), new String(p_data));
+                    } catch (IllegalArgumentException e) {
+                    }
+            }
+        } else {
+            if (!isSenderKnown)
+                System.out.printf("IP `%s` sent a message with state data.\n", sender.getIp());
+        }
+
     }
 
     @Override

@@ -10,12 +10,23 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
+import java.util.Map;
 
 public class AgcSettings {
-    private static HashMap<String, String> table;
+    private volatile static HashMap<String, String> table;
     public static File settingsFile;
 
-    public static synchronized void refresh() {
+    public static void init() {
+        AgcSettings.refresh();
+
+    }
+
+    private static void refreshIfNeeded() {
+        if (AgcSettings.table == null)
+            AgcSettings.refresh();
+    }
+
+    private static synchronized void refresh() {
         // Search all files for the settings file:
         for (File f : Sketch.DATA_DIR_FILES) {
             String fileName = f.getName();
@@ -74,8 +85,7 @@ public class AgcSettings {
     }
 
     public static synchronized String getSetting(String p_key) {
-        if (AgcSettings.table == null)
-            AgcSettings.refresh();
+        AgcSettings.refreshIfNeeded();
 
         String ret = AgcSettings.table.get(p_key);
 
@@ -87,9 +97,45 @@ public class AgcSettings {
         return ret;
     }
 
-    public static synchronized void add(String p_key, String p_value) {
-        if (AgcSettings.table == null)
-            AgcSettings.refresh();
+    public static synchronized void setElseAdd(String p_key, String p_value) {
+        AgcSettings.settingsFile.delete();
+
+        boolean retry = false;
+        do {
+            try {
+                AgcSettings.settingsFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+                retry = true;
+            }
+        } while (retry);
+
+        // Append the entire thing into the file:
+
+        StringBuilder fileData = new StringBuilder();
+        for (Map.Entry<String, String> entry : AgcSettings.table.entrySet()) {
+            String setting = entry.getKey().concat("=").concat(entry.getValue());
+            fileData.append(setting);
+
+            // [https://stackoverflow.com/a/1625263/13951505]:
+            try {
+                Files.write(
+                        AgcSettings.settingsFile.toPath(),
+                        setting.getBytes(),
+                        StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        AgcSettings.refresh();
+    }
+
+    public static synchronized void setElseAdd(String... p_settings) {
+    }
+
+    private static synchronized void add(String p_key, String p_value) {
+        AgcSettings.refreshIfNeeded();
 
         // [https://stackoverflow.com/a/1625263/13951505]
         String setting = p_key.concat("=").concat(p_value);
@@ -101,11 +147,12 @@ public class AgcSettings {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        AgcSettings.refresh();
     }
 
-    public static synchronized void add(String... p_settings) {
-        if (AgcSettings.table == null)
-            AgcSettings.refresh();
+    private static synchronized void add(String... p_settings) {
+        AgcSettings.refreshIfNeeded();
 
         // [https://stackoverflow.com/a/1625263/13951505]
         if ((p_settings.length & 1) != 0) {

@@ -1,7 +1,13 @@
 package com.brahvim.androidgamecontroller.server.forms;
 
+import java.awt.Color;
+
 import com.brahvim.androidgamecontroller.server.Sketch;
 import com.brahvim.androidgamecontroller.server.StringTable;
+
+import uibooster.model.Form;
+import uibooster.model.FormElement;
+import uibooster.model.FormElementChangeListener;
 
 public class SettingsForm extends AgcForm {
     public final static SettingsForm INSTANCE = new SettingsForm();
@@ -11,7 +17,7 @@ public class SettingsForm extends AgcForm {
     // }
 
     public SettingsForm() {
-        super(AgcForm.UI.createForm(
+        super.build = AgcForm.UI.createForm(
                 StringTable.getString("SettingsForm.winTitle"))
                 .addButton(StringTable.getString("SettingsForm.exitButton"),
                         new Runnable() {
@@ -20,6 +26,32 @@ public class SettingsForm extends AgcForm {
                                 Sketch.agcExit();
                             };
                         })
+
+                .addSlider(StringTable.getString("SettingsForm.bgTransparencySlider"),
+                        1, 255, 150, 63, 17)
+                .setID("slider_bg_transparency")
+
+                .setChangeListener(new FormElementChangeListener() {
+                    @Override
+                    public void onChange(FormElement p_elt, Object p_value, Form p_form) {
+                        switch (p_elt.getId()) {
+                            case "slider_bg_transparency":
+                                if (!(p_value instanceof Integer))
+                                    break;
+
+                                synchronized (Sketch.SKETCHES) {
+                                    for (Sketch s : Sketch.SKETCHES) {
+                                        synchronized (s) {
+                                            s.bgColor = s.color(0, (int) p_value);
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                });
+
+        // "Restart AGC" button:
         /*
          * .addButton(StringTable.getString("SettingsForm.restartButton"), new
          * Runnable() {
@@ -90,9 +122,6 @@ public class SettingsForm extends AgcForm {
          * }
          * })
          */
-
-        // End of super-constructor call:
-        );
     }
 
 }

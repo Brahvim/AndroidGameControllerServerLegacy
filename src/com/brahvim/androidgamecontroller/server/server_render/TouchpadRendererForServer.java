@@ -8,6 +8,7 @@ import com.brahvim.androidgamecontroller.render.TouchpadRendererBase;
 import com.brahvim.androidgamecontroller.serial.configs.TouchpadConfig;
 import com.brahvim.androidgamecontroller.server.SineWave;
 import com.brahvim.androidgamecontroller.server.Sketch;
+import com.brahvim.androidgamecontroller.server.StringTable;
 
 import processing.core.PApplet;
 import processing.core.PConstants;
@@ -18,7 +19,7 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
     @SuppressWarnings("unused")
     private Robot robot;
     private Sketch parentSketch;
-    private PVector screenDimensions;
+    private PVector screenDimensions, center;
     private SineWave tapFadeWave, numTapsFadeWave;
 
     public TouchpadRendererForServer(Sketch p_parentSketch, @NotNull TouchpadConfig p_config, Robot p_robot) {
@@ -26,8 +27,9 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
         this.robot = p_robot;
         this.parentSketch = p_parentSketch;
         this.tapFadeWave = new SineWave(p_parentSketch, 0.025f);
-        // this.numTapsFadeWave = new SineWave(p_parentSketch, 0.001f);
+        this.numTapsFadeWave = new SineWave(p_parentSketch, 0.001f);
         this.screenDimensions = this.parentSketch.client.getConfig().screenDimensions;
+        this.center = PVector.add(super.config.transform, PVector.mult(super.config.scale, 0.5f));
         ServerRenderer.all.add(this);
     }
 
@@ -36,15 +38,6 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
         if (super.state.ppressed && !super.state.pressed) {
             this.tapFadeWave.endWhenAngleIs(90);
             this.tapFadeWave.start();
-        }
-
-        // if (!super.state.ppressed && super.state.pressed) {
-        // this.tapFadeWave.end();
-        // }
-
-        if (super.state.pdoubleTapped && !super.state.doubleTapped) {
-            this.numTapsFadeWave.endWhenAngleIs(180);
-            this.numTapsFadeWave.start();
         }
 
         p_graphics.pushMatrix();
@@ -68,7 +61,8 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
         // #endregion
 
         // Drawing the touch!:
-        if (super.state.pressed) {
+
+        if (super.state.pressed && !super.state.doubleTapped) {
             p_graphics.pushMatrix();
 
             float tapFade = PApplet.abs(this.tapFadeWave.get());
@@ -82,13 +76,36 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
                             0, this.parentSketch.height));
             p_graphics.scale(super.state.mouse.z * 20 * tapFade);
 
-            p_graphics.fill(0, 0, 0, tapFade * 150);
+            p_graphics.fill(0, tapFade * 150);
             p_graphics.strokeWeight(tapFade * 0.05f);
             p_graphics.stroke(255, tapFade);
 
             p_graphics.ellipse(0, 0, 1, 1);
             p_graphics.popMatrix();
         }
+
+        // #region Double tap indicator:
+        if (super.state.doubleTapped) {
+            if (!super.state.pdoubleTapped) {
+                System.out.println("Double tap!");
+                this.numTapsFadeWave.endWhenAngleIs(180);
+                this.numTapsFadeWave.start();
+            }
+
+            float numTapsFade = PApplet.abs(this.numTapsFadeWave.get());
+
+            p_graphics.pushMatrix();
+            p_graphics.pushStyle();
+
+            p_graphics.fill(0, numTapsFade * 255);
+            p_graphics.textSize(numTapsFade * 8);
+            p_graphics.text(StringTable.getString("TouchpadRenderer.doubleTap"),
+                    this.center.x, this.center.y);
+
+            p_graphics.popStyle();
+            p_graphics.popMatrix();
+        }
+        // #endregion
 
         p_graphics.popMatrix();
         p_graphics.popStyle();

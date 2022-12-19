@@ -23,7 +23,10 @@ public class Scene {
     public void post() {
     }
 
-    public void onReceive(byte[] p_data, AgcClient p_client) {
+    // If you don't want other sketches' scenes to be able see this event,
+    // return `true`!:
+    public boolean onReceive(byte[] p_data, AgcClient p_client) {
+        return false;
     }
     // #endregion
 

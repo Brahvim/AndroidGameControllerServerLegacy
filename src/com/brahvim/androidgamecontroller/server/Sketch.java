@@ -15,6 +15,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -63,7 +64,7 @@ public class Sketch extends PApplet {
     public static PImage agcIcon;
 
     // #region Instance fields.
-    public final Color javaBgColor = new Color(0, 0, 0, 1);
+    public Color javaBgColor = new Color(0, 0, 0, 1);
     public final Sketch SKETCH = this;
     public AgcClient client;
     public int frameStartTime, pframeTime, frameTime;
@@ -298,13 +299,13 @@ public class Sketch extends PApplet {
             }
 
             @Override
-            public void onReceive(byte[] p_data, AgcClient p_client) {
+            public boolean onReceive(byte[] p_data, AgcClient p_client) {
                 if (RequestCode.packetHasCode(p_data)) {
                     switch (RequestCode.fromReceivedPacket(p_data)) {
                         case CLIENT_CLOSE:
                             AgcServerSocket.getInstance().removeClient(p_client);
                             if (Sketch.SKETCHES.size() == 1)
-                                SKETCH.setScene(awaitingConnectionsScene);
+                                SKETCH.setScene(SKETCH.awaitingConnectionsScene);
                             else
                                 SKETCH.exit();
                             break;
@@ -313,7 +314,15 @@ public class Sketch extends PApplet {
                             break;
                     }
                 } else { // Deserialize, compare using `controlNumber`, set!
-                    Object deserialized = ByteSerial.decode(p_data);
+                    Object deserialized = null;
+
+                    try {
+                        deserialized = ByteSerial.decode(p_data);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        System.out.println("An object was left un-serialized.");
+                    }
+
                     boolean isButtonRecognized = updateRendererState(deserialized);
                     if (!isButtonRecognized)
                         System.out.printf("%s was not assigned.\n",
@@ -321,6 +330,8 @@ public class Sketch extends PApplet {
                     // System.out.printf("It's ID was `%d`.\n",
                     // ((StateBase) deserialized).controlNumber);
                 }
+
+                return false;
             }
 
             /**
@@ -379,7 +390,6 @@ public class Sketch extends PApplet {
                 SKETCH.scenes_settingsMenuKbCheck();
             }
         };
-
     }
     // #endregion
     // #endregion
@@ -404,6 +414,7 @@ public class Sketch extends PApplet {
             PApplet.runSketch(PApplet.concat(p_args, args), constructedSketch);
 
         AgcServerSocket.init(); // No socket without this!
+        AgcSettings.init(); // Nothing without this! :joy:
 
         System.out.printf("Welcome to AndroidGameController `%s`!\n",
                 AgcSettings.getSetting("version"));
@@ -493,7 +504,9 @@ public class Sketch extends PApplet {
                 winMouseY < sketchFrame.getY() + height;
         // #endregion
 
-        this.sketchFrame.setBackground(this.javaBgColor);
+        synchronized (this.javaBgColor) {
+            this.sketchFrame.setBackground(this.javaBgColor);
+        }
 
         this.gr.beginDraw();
         this.gr.background(this.bgColor);
@@ -547,104 +560,6 @@ public class Sketch extends PApplet {
     public static Sketch createNewInstance(AgcClient p_client) {
         Sketch sketch = new Sketch(p_client);
         return sketch;
-    }
-
-    public void onReceive(byte[] p_data, String p_ip, int p_port) {
-        AgcClient sender = null;
-
-        for (AgcClient c : AgcServerSocket.getInstance().getClients()) {
-            if (c.getIp().equals(p_ip)) {
-                sender = c;
-            }
-        }
-
-        if (sender == null) {
-            sender = new AgcClient(p_ip, p_port, new String(
-                    RequestCode.getPacketExtras(p_data)));
-        } else
-            System.out.printf("%s sent a message.\n", sender.getDeviceName());
-
-        if (this.currentScene != null)
-            this.currentScene.onReceive(p_data, sender);
-
-        // All scenes reserve the right to data, not just a few select ones!:
-        /*
-         * if (this.currentScene == this.awaitingConnectionsScene)
-         * ; // this.currentScene.onReceive(p_data, sender); return;
-         * else if (this.currentScene == this.workScene) {
-         * this.currentScene.onReceive(p_data, sender);
-         * return;
-         * } else if (this.currentScene == this.exitScene)
-         * ;
-         */
-
-        if (RequestCode.packetHasCode(p_data)) {
-            switch (RequestCode.fromReceivedPacket(p_data)) {
-                case ADD_ME:
-                    System.out.printf("%s wants to connect!\n", sender.getDeviceName());
-
-                    AgcClient toAdd = sender;
-                    if (AgcServerSocket.getInstance().isClientBanned(toAdd))
-                        return;
-
-                    // TODO: Solve the queue list bug and this:
-
-                    // *Me later:*
-                    // Wait, there's a bug - O_o?
-                    // There isn't one, meh :|
-                    if (AgcServerSocket.getInstance().hasClient(sender)) {
-                        AgcServerSocket.getInstance().sendCode(RequestCode.CLIENT_WAS_REGISTERED, sender);
-                    }
-
-                    // If the client isn't already in our list,
-                    if (!(AgcServerSocket.getInstance().hasClient(toAdd)
-                            // #region Big comment, LOL.
-                            // Storing only arrays of hashcodes to compare
-                            // would've been a good optimization, heh.
-                            // ...which I OF COURSE, don't need to do.
-
-                            // Pointers are just integers! Neat!
-                            // (...but `AgcClient::equals()` ain't neat! :joy:)
-                            // (Imagine if `equals()` *actually* used hashcodes.
-                            // ...that would fail *pr'tty* quickly.)
-                            // #endregion
-                            || AgcServerSocket.getInstance().requestQueue.contains(sender))) {
-                        // Yes, yes, `NewConnectionsForm.build()` will also check this,
-                        // but the app breaks if you remove this check ¯\_(ツ)_/¯
-                        if (!NewConnectionForm.noMorePings) {
-                            NewConnectionForm.build(toAdd).show();
-                        } else
-                            return;
-                        break;
-                    }
-                    AgcServerSocket.getInstance().requestQueue.add(sender);
-
-                case CLIENT_SENDS_CONFIG:
-                    AgcServerSocket.getInstance().requestQueue.remove(sender);
-
-                    Sketch sketch = Sketch.SKETCHES.get(0);
-
-                    if (AgcServerSocket.getInstance().getClients().size() == 1) {
-                        sender.setConfig((AgcConfigurationPacket) ByteSerial
-                                .decode(RequestCode.getPacketExtras(p_data)));
-                        sketch.client = sender;
-                        sketch.setScene(sketch.workScene);
-                    } else {
-                        Sketch.createNewInstance(sender);
-                    }
-                    break;
-
-                // Should never happen thatnks to the symlinks..:
-
-                default:
-                    try {
-                        System.out.printf("Unknown request code packet from sender `%s`: `%s`.",
-                                sender.getDeviceName(), new String(p_data));
-                    } catch (IllegalArgumentException e) {
-                    }
-            }
-        }
-
     }
 
     // #region Processing's keyboard event callbacks.
