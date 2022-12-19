@@ -27,6 +27,7 @@ public class SettingsForm extends AgcForm {
                             };
                         })
 
+                // Parameters: min, max, default, "major-tick", "minor-tick".
                 .addSlider(StringTable.getString("SettingsForm.bgTransparencySlider"),
                         1, 255, 150, 63, 17)
                 .setID("slider_bg_transparency")
