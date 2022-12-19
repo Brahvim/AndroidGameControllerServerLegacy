@@ -1,5 +1,7 @@
 package com.brahvim.androidgamecontroller.server.server_render;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.Robot;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,15 +18,15 @@ import processing.core.PGraphics;
 import processing.core.PVector;
 
 public class TouchpadRendererForServer extends TouchpadRendererBase implements ServerRenderer {
-    @SuppressWarnings("unused")
     private Robot robot;
     private Sketch parentSketch;
-    private PVector screenDimensions, center;
+    private PVector screenDimensions, center, touchStart, touchDelta, ptouchPos;
     private SineWave tapFadeWave, numTapsFadeWave;
 
     public TouchpadRendererForServer(Sketch p_parentSketch, @NotNull TouchpadConfig p_config, Robot p_robot) {
         super(p_config);
         this.robot = p_robot;
+        this.robot.setAutoWaitForIdle(true);
         this.parentSketch = p_parentSketch;
         this.tapFadeWave = new SineWave(p_parentSketch, 0.025f);
         this.numTapsFadeWave = new SineWave(p_parentSketch, 0.001f);
@@ -35,6 +37,71 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
 
     @Override
     public void draw(@NotNull PGraphics p_graphics) {
+        // #region Robot logic.
+        switch (super.config.replicationPolicy) {
+            case VELOCITY:
+                // Unnecessary and "dangerous". I know:
+                if (!super.state.pressed && super.state.ppressed)
+                    this.touchStart = null;
+
+                if (super.state.pressed && !super.state.ppressed)
+                    this.touchStart = super.state.mouse;
+
+                if (super.state.pressed) {
+                    Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
+
+                    if (this.touchStart == null)
+                        this.touchStart = new PVector(mouseLocation.x, mouseLocation.y);
+
+                    this.touchDelta = PVector.sub(super.state.mouse, this.touchStart);
+
+                    this.touchDelta.set(
+                            PApplet.map(this.touchDelta.x, 0, this.screenDimensions.x, 0, this.parentSketch.width),
+                            PApplet.map(this.touchDelta.y, 0, this.screenDimensions.y, 0, this.parentSketch.height));
+
+                    this.touchDelta.mult(super.config.sensitivity);
+
+                    this.robot.mouseMove(
+                            mouseLocation.x + (int) this.touchDelta.x,
+                            mouseLocation.y + (int) this.touchDelta.y);
+                }
+                break;
+
+            case POSITION:
+                // Unnecessary and "dangerous". I know:
+                if (!super.state.pressed && super.state.ppressed)
+                    this.touchStart = null;
+
+                if (super.state.pressed && !super.state.ppressed)
+                    this.touchStart = super.state.mouse;
+
+                if (super.state.pressed && !this.ptouchPos.equals(super.state.mouse)) {
+                    System.out.println("Touch moved!" + this.parentSketch.frameCount);
+                    Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
+
+                    if (this.touchStart == null)
+                        this.touchStart = new PVector(mouseLocation.x, mouseLocation.y);
+
+                    this.touchDelta = PVector.sub(super.state.mouse, this.touchStart);
+
+                    this.touchDelta.set(
+                            PApplet.map(this.touchDelta.x, 0, this.screenDimensions.x, 0, this.parentSketch.width),
+                            PApplet.map(this.touchDelta.y, 0, this.screenDimensions.y, 0, this.parentSketch.height));
+
+                    this.touchDelta.mult(super.config.sensitivity);
+
+                    this.robot.mouseMove(
+                            mouseLocation.x + (int) this.touchDelta.x,
+                            mouseLocation.y + (int) this.touchDelta.y);
+                }
+
+                this.ptouchPos = super.state.mouse;
+                break;
+
+            default:
+        }
+        // #endregion
+
         if (super.state.ppressed && !super.state.pressed) {
             this.tapFadeWave.endWhenAngleIs(90);
             this.tapFadeWave.start();
@@ -61,7 +128,6 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
         // #endregion
 
         // Drawing the touch!:
-
         if (super.state.pressed && !super.state.doubleTapped) {
             p_graphics.pushMatrix();
 

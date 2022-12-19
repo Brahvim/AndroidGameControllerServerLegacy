@@ -385,7 +385,8 @@ public class AgcServerSocket extends UdpSocket {
         if (RequestCode.packetHasCode(p_data)) {
             switch (RequestCode.fromReceivedPacket(p_data)) {
                 case ADD_ME:
-                    System.out.printf("%s wants to connect!\n", sender.getDeviceName());
+                    if (!NewConnectionForm.noMorePings)
+                        System.out.printf("%s wants to connect!\n", sender.getDeviceName());
 
                     AgcClient toAdd = sender;
                     if (AgcServerSocket.getInstance().isClientBanned(toAdd))

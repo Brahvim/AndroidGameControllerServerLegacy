@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyAdapter;
@@ -479,8 +480,9 @@ public class Sketch extends PApplet {
         pwinMouseX = winMouseX;
         pwinMouseY = winMouseY;
 
-        winMouseX = MouseInfo.getPointerInfo().getLocation().x;
-        winMouseY = MouseInfo.getPointerInfo().getLocation().y;
+        Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
+        winMouseX = mouseLocation.x;
+        winMouseY = mouseLocation.y;
 
         if (mousePressed) {
             surfaceX = winMouseX - pmousePressX;
