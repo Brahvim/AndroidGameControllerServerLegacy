@@ -439,6 +439,12 @@ public class AgcServerSocket extends UdpSocket {
                         firstSketch.client = sender;
                         firstSketch.setScene(firstSketch.workScene);
                     } else {
+                        for (Sketch s : Sketch.SKETCHES) {
+                            if (s.client.equals(sender)) {
+                                s.restartWithConfig(sender.getConfig());
+                            }
+                        }
+
                         Sketch.createNewInstance(sender);
                     }
                     break;

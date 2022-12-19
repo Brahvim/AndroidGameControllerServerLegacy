@@ -663,6 +663,11 @@ public class Sketch extends PApplet {
      * }
      */
 
+    public void restartWithConfig(AgcConfigurationPacket p_config) {
+        this.client.setConfig(p_config);
+        this.setScene(workScene);
+    }
+
     public JFrame createSketchPanel(Runnable p_exitTask,
             Sketch p_sketch, PGraphics p_sketchGraphics) {
         // This is the dummy variable from Processing.
