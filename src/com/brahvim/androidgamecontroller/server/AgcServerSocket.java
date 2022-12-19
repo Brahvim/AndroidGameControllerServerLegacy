@@ -428,9 +428,9 @@ public class AgcServerSocket extends UdpSocket {
 
                     AgcServerSocket.getInstance().requestQueue.remove(sender);
 
-                    Sketch firstSketch = Sketch.SKETCHES.get(0);
-
                     if (AgcServerSocket.getInstance().getClients().size() == 1) {
+                        Sketch firstSketch = Sketch.SKETCHES.get(0);
+
                         try {
                             sender.setConfig((AgcConfigurationPacket) ByteSerial
                                     .decode(RequestCode.getPacketExtras(p_data)));
