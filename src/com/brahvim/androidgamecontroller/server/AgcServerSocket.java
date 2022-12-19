@@ -424,7 +424,7 @@ public class AgcServerSocket extends UdpSocket {
                     AgcServerSocket.getInstance().requestQueue.add(sender);
 
                 case CLIENT_SENDS_CONFIG:
-                    // TODO: Make sure no other sketch uses `Sketch.createNewInstance` this!
+                    // TODO: Make sure only ONE sketch uses `Sketch::createNewInstance()`!
 
                     AgcServerSocket.getInstance().requestQueue.remove(sender);
 
