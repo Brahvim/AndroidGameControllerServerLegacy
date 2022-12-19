@@ -1,7 +1,5 @@
 package com.brahvim.androidgamecontroller.server.forms;
 
-import java.awt.Color;
-
 import com.brahvim.androidgamecontroller.server.Sketch;
 import com.brahvim.androidgamecontroller.server.StringTable;
 

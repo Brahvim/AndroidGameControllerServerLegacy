@@ -35,7 +35,6 @@ import com.brahvim.androidgamecontroller.serial.states.KeyboardState;
 import com.brahvim.androidgamecontroller.serial.states.ThumbstickState;
 import com.brahvim.androidgamecontroller.serial.states.TouchpadState;
 import com.brahvim.androidgamecontroller.server.forms.AgcForm;
-import com.brahvim.androidgamecontroller.server.forms.NewConnectionForm;
 import com.brahvim.androidgamecontroller.server.forms.SettingsForm;
 import com.brahvim.androidgamecontroller.server.server_render.ButtonRendererForServer;
 import com.brahvim.androidgamecontroller.server.server_render.DpadButtonRendererForServer;
@@ -64,7 +63,7 @@ public class Sketch extends PApplet {
     public static PImage agcIcon;
 
     // #region Instance fields.
-    public Color javaBgColor = new Color(0, 0, 0, 1);
+    public final Color javaBgColor = new Color(0, 0, 0, 1);
     public final Sketch SKETCH = this;
     public AgcClient client;
     public int frameStartTime, pframeTime, frameTime;
@@ -391,7 +390,7 @@ public class Sketch extends PApplet {
             }
         };
     }
-    // #endregion
+    // #endregion Need this one for some reason :/
     // #endregion
 
     // #region Constructors, `main()`, `settings()`...
@@ -472,6 +471,10 @@ public class Sketch extends PApplet {
         this.frameTime = this.frameStartTime - this.pframeTime;
         this.pframeTime = this.frameStartTime;
 
+        // Ths just needs to be here.
+        // Wish I could optimize it out...
+        this.sketchFrame.setBackground(this.javaBgColor);
+
         // #region Window dragging logic.
         pwinMouseX = winMouseX;
         pwinMouseY = winMouseY;
@@ -504,10 +507,7 @@ public class Sketch extends PApplet {
                 winMouseY < sketchFrame.getY() + height;
         // #endregion
 
-        synchronized (this.javaBgColor) {
-            this.sketchFrame.setBackground(this.javaBgColor);
-        }
-
+        // #region Push matrices, draw background, draw current scene...
         this.gr.beginDraw();
         this.gr.background(this.bgColor);
 
@@ -528,6 +528,7 @@ public class Sketch extends PApplet {
         super.popStyle();
 
         this.gr.endDraw();
+        // #endregion
     }
 
     public void post() {
