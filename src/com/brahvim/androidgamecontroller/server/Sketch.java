@@ -70,7 +70,7 @@ public class Sketch extends PApplet {
     public int frameStartTime, pframeTime, frameTime;
 
     // #region Window coordinates and window states.
-    public int bgColor = super.color(0, 150);
+    public int bgColor = super.color(0, 127);
     public PVector minExtent, maxExtent;
 
     // #region Ma'h boilerplate :D
@@ -204,14 +204,20 @@ public class Sketch extends PApplet {
 
                 // TODO: Remove this if issues exist.
                 if (this.config == null) {
+                    // this.config = new AgcConfigurationPacket();
                     SKETCH.setScene(SKETCH.awaitingConnectionsScene);
+                    return;
+                } else if (this.config.anyConfigArrayisNull()) {
+                    // this.config.initLists();
+                    SKETCH.setScene(SKETCH.awaitingConnectionsScene);
+                    return;
                 }
 
                 // Renderer initialization:
-                this.buttonRenderers = new ArrayList<>(config.buttons.size());
-                this.dpadButtonRenderers = new ArrayList<>(config.dpadButtons.size());
-                this.thumbstickRenderers = new ArrayList<>(config.thumbsticks.size());
-                this.touchpadRenderers = new ArrayList<>(config.touchpads.size());
+                this.buttonRenderers = new ArrayList<>(this.config.buttons.size());
+                this.dpadButtonRenderers = new ArrayList<>(this.config.dpadButtons.size());
+                this.thumbstickRenderers = new ArrayList<>(this.config.thumbsticks.size());
+                this.touchpadRenderers = new ArrayList<>(this.config.touchpads.size());
 
                 // #region Map them all over!:
                 for (int i = 0; i < config.buttons.size(); i++) {

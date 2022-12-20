@@ -1,5 +1,6 @@
 package com.brahvim.androidgamecontroller.render;
 
+import com.brahvim.androidgamecontroller.serial.ButtonShape;
 import com.brahvim.androidgamecontroller.serial.configs.ButtonConfig;
 import com.brahvim.androidgamecontroller.serial.states.ButtonState;
 
@@ -25,11 +26,11 @@ public class ButtonRendererBase {
         p_graphics.pushStyle();
 
         p_graphics.translate(this.config.transform.x,
-                this.config.transform.y);
+          this.config.transform.y);
         p_graphics.scale(this.config.scale.x, this.config.scale.x);
         p_graphics.rotate(this.config.transform.z);
 
-        p_graphics.fill(230, this.state.pressed ? 100 : 50);
+        p_graphics.fill(230, this.state.pressed? 100 : 50);
         p_graphics.noStroke();
 
         switch (this.config.shape) {
@@ -40,7 +41,7 @@ public class ButtonRendererBase {
             case RECTANGLE:
                 // p_graphics.rectMode(PConstants.CENTER);
                 p_graphics.rect(0, 0, 1.2f, 0.55f,
-                        0.1f, 0.1f, 0.1f, 0.1f);
+                  0.1f, 0.1f, 0.1f, 0.1f);
                 break;
 
             default:
@@ -53,6 +54,34 @@ public class ButtonRendererBase {
 
         p_graphics.popMatrix();
         p_graphics.popStyle();
+    }
+
+    /**
+     * Used to simply draw the button for display purposes - outside of `workScene`!
+     */
+    public static void displayDraw(@NotNull PGraphics p_graphics, @NotNull String p_text,
+                                   @NotNull ButtonShape p_shape, boolean p_pressed) {
+        p_graphics.fill(230, p_pressed? 100 : 50);
+        p_graphics.noStroke();
+
+        switch (p_shape) {
+            case ROUND:
+                p_graphics.ellipse(0, 0, 1, 1);
+                break;
+
+            case RECTANGLE:
+                // p_graphics.rectMode(PConstants.CENTER);
+                p_graphics.rect(0, 0, 1.2f, 0.55f,
+                  0.1f, 0.1f, 0.1f, 0.1f);
+                break;
+
+            default:
+                break;
+        }
+
+        p_graphics.textSize(0.4f);
+        p_graphics.textAlign(PConstants.CENTER, PConstants.CENTER);
+        p_graphics.text(p_text, 0, 0);
     }
 
     public boolean wasPressed() {

@@ -34,9 +34,31 @@ public class AgcConfigurationPacket implements Serializable {
 
     public boolean anyConfigArrayisNull() {
         return this.buttons == null &&
-                this.dpadButtons == null &&
-                this.thumbsticks == null &&
-                this.touchpads == null;
+          this.dpadButtons == null &&
+          this.thumbsticks == null &&
+          this.touchpads == null;
+    }
+
+    public boolean anyConfigArrayisEmpty() {
+        return this.anyConfigArrayisNull()? true :
+          this.buttons.size() == 0 &&
+            this.dpadButtons.size() == 0 &&
+            this.thumbsticks.size() == 0 &&
+            this.touchpads.size() == 0;
+    }
+
+    public void initLists() {
+        this.buttons = new ArrayList<>(2);
+        this.dpadButtons = new ArrayList<>(2);
+        this.thumbsticks = new ArrayList<>(1);
+        this.touchpads = new ArrayList<>(1);
+    }
+
+    public void initLists(int p_buttons, int p_dpadButton, int p_thumbsticks, int p_touchpads) {
+        this.buttons = new ArrayList<>(p_buttons);
+        this.dpadButtons = new ArrayList<>(p_dpadButton);
+        this.thumbsticks = new ArrayList<>(p_thumbsticks);
+        this.touchpads = new ArrayList<>(p_touchpads);
     }
 
     // public boolean anythingIsNull() {
@@ -47,22 +69,22 @@ public class AgcConfigurationPacket implements Serializable {
 
     public <T> T addConfig(ControlConfigBase p_object) {
         if (p_object instanceof ButtonConfig)
-            this.buttons.add((ButtonConfig) p_object);
+            this.buttons.add((ButtonConfig)p_object);
 
         else if (p_object instanceof DpadButtonConfig)
-            this.dpadButtons.add((DpadButtonConfig) p_object);
+            this.dpadButtons.add((DpadButtonConfig)p_object);
 
         else if (p_object instanceof ThumbstickConfig)
-            this.thumbsticks.add((ThumbstickConfig) p_object);
+            this.thumbsticks.add((ThumbstickConfig)p_object);
 
         else if (p_object instanceof TouchpadConfig)
-            this.touchpads.add((TouchpadConfig) p_object);
+            this.touchpads.add((TouchpadConfig)p_object);
 
         else
             throw new IllegalArgumentException();
 
         @SuppressWarnings("unchecked")
-        T ret = (T) p_object;
+        T ret = (T)p_object;
         return ret;
     }
 

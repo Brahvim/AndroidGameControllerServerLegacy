@@ -434,6 +434,8 @@ public class AgcServerSocket extends UdpSocket {
                                     .decode(RequestCode.getPacketExtras(p_data)));
                         } catch (IOException e) {
                             firstSketch.setScene(firstSketch.awaitingConnectionsScene);
+                            e.printStackTrace();
+                            return;
                         }
 
                         firstSketch.client = sender;
@@ -442,6 +444,7 @@ public class AgcServerSocket extends UdpSocket {
                         for (Sketch s : Sketch.SKETCHES) {
                             if (s.client.equals(sender)) {
                                 s.restartWithConfig(sender.getConfig());
+                                return;
                             }
                         }
 
