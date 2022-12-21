@@ -63,13 +63,11 @@ public class UdpSocket {
     private DatagramPacket out;
     // endregion
 
-    // Threading stuff *haha:*
-    // *haha when i concurrent die* - 512 lien!!1!1
-
+    // Concurrent stuff *haha:*
     /**
      * The {@link UdpSocket.Receiver} class helps {@code UdpSocket}s receive data on
      * a separate thread, aiding with application performance and modern
-     * hardware programming practices. But, it is NOT useful on systems like
+     * hardware programming practices. It may NOT, be useful on systems like
      * Android, where ALL networking tasks must be done asynchronously.
      *
      * @author Brahvim Bhaktvatsal
@@ -95,24 +93,35 @@ public class UdpSocket {
         private Thread thread; // Ti's but a daemon thread.
 
         /**
-         * Sets the size of the buffer (in bytes) data is received into. The maximum
-         * possible size is {@code 65535} bytes.
-         *
-         * @apiNote Is {@code 65535} {@link Receiver#PACKET_MAX_SIZE} by default.
-         * @implNote <i>Should</i> be {@code 576} by default. To know why,
-         *           please see
-         *           {@link<a href=
-         *           "https://stackoverflow.com/a/9235558/13951505">this</a>}.
-         * @deprecated This should not be something you need to worry about. Modern
-         *             computers are good enough already, and a `65`kb allocation when
-         *             your application already takes `200`MB won't be a big problem.
+         * The {@linkplain UdpSocket} instance using this
+         * {@linkplain UdpSocket.Receiver} instance.
          */
+        private final UdpSocket parent;
 
+        /**
+         * Sets the size of the buffer (in bytes) data is received into. The maximum
+         * possible size is {@code 65535} ({@link Receiver#PACKET_MAX_SIZE}) bytes.
+         *
+         * @apiNote Is {@code 65535} ({@link Receiver#PACKET_MAX_SIZE}) by default.
+         * @implNote This <i>should</i> instead, be {@code 576} by default.
+         *           To know why, please see {@link<a href=
+         *           "https://stackoverflow.com/a/9235558/13951505">this</a>}.
+         *
+         *           <br>
+         *           </br>
+         *           This field should not be something you need to worry about. Modern
+         *           computers are fast enough already. A {@code 65}KB allocation
+         *           cannot be a problem when your application already takes
+         *           {@code 200}MB in RAM, GC'ing away much of it every second,
+         *           and still sailing well.
+         */
         @Deprecated
         // PS The reason mentioned for deprecation is *probably* one of
         // ***the worst*** decisions of my life! :joy:
         public Integer packetMaxSize = Receiver.PACKET_MAX_SIZE;
         // ^^^ PS a more precise number is `543` bytes.
+        // Update (as of `21 December, 2022`): It. Doesn't. MATTER.
+        // Just come up with a fixed the packet size! The rest is fine!
 
         /**
          * An internal {@code private} variable that lets the thread know whether or not
@@ -137,47 +146,53 @@ public class UdpSocket {
 
         /**
          * Given the 'parent' {@linkplain UdpSocket} that objects of this class are to
-         * be
-         * attached to, this class will
+         * be attached to, this class will handle receiving UDP packets.
          *
          * @param p_parent The {@code UdpSocket} instance.
          * @implNote {@code p_parent} may not be used since {@code Receiver} is a class
          *           nested inside {@linkplain UdpSocket}
          */
-        Receiver(UdpSocket p_parent) {
+        private Receiver(UdpSocket p_parent) {
             Receiver.NUMBER_OF_THREADS++;
+            this.parent = p_parent;
 
+            // Scope is what matters.
+            // That's also why I use Hungarian notation.
+            final UdpSocket.Receiver REC = this;
+            final UdpSocket PARENT = this.parent;
+
+            // Sure, we have lambda expressions, but I won't be using them, haha.
             this.task = new Runnable() {
-                // Sure, we have lambda expressions, but I won't be using them, haha.
+                // No mutual exclusion locking here, by the way. This
+                // `short`(`byteArrayMaxSize`) *should* be fine here?
+                // Ehh, it's fine. Is it THAT important to use `AtomicShort` right-away anyway?
+                // (...or `volatile`?)
+
+                private byte[] byteData = new byte[REC.packetMaxSize /* 65535 */];
+                // ^^^ B I G ___ A L L O C A T I O N !
+
+                @Override
                 public void run() {
-                    // No mutual exclusion locking here, by the way. This
-                    // `short`(`byteArrayMaxSize`) *should* be fine here?
-                    // Ehh, it's fine. Is it THAT important to use `AtomicShort` right-away anyway?
-                    // (...or `volatile`?)
-
-                    byte[] byteData = new byte[packetMaxSize /* 65535 */];
-                    // ^^^ B I G ___ A L L O C A T I O N !
-
                     // We got some work?
-                    while (doRun) {
+                    while (REC.doRun) {
                         try {
-                            in = new DatagramPacket(byteData, byteData.length);
-                            if (sock != null)
-                                sock.receive(in); // Fetch it well!
+                            PARENT.in = new DatagramPacket(byteData, byteData.length);
+                            if (PARENT.sock != null)
+                                PARENT.sock.receive(PARENT.in); // Fetch it well!
                         } catch (IOException e) {
                             if (e instanceof SocketTimeoutException) {
                                 // ¯\_(ツ)_/¯
                                 // System.out.println("Timeout ended! Continuing...");
                             } else if (e instanceof SocketException) {
-                                doRun = false;
+                                REC.doRun = false;
                                 return;
                             } else
                                 e.printStackTrace(); // ¯\_(ツ)_/¯
                         }
 
                         // Callback!:
-                        if (in != null) {
-                            InetAddress addr = in.getAddress();
+                        if (PARENT.in != null) {
+                            InetAddress addr = PARENT.in.getAddress();
 
                             if (addr == null)
                                 continue;
@@ -191,32 +206,35 @@ public class UdpSocket {
                                 System.arraycopy(byteData, 0, copy, 0, byteData.length);
 
                                 // Super slow `memset()`...
-                                for (int i = 0; i < byteData.length; i++)
-                                    byteData[i] = 0;
-                                // ...but I just didn't want to use `System.arraycopy()`
-                                // with a freshly allocated array. What a WASTE!
+                                // for (int i = 0; i < byteData.length; i++)
+                                // byteData[i] = 0;
 
+                                // ~~...but I just didn't want to use `System.arraycopy()`
+                                // with a freshly allocated array. What a WASTE!~~
+
+                                this.byteData = new byte[REC.packetMaxSize];
                                 // PS It IS TWO WHOLE ORDERS OF MAGNITUDE faster to allocate
                                 // than to do a loop and set values.
                                 // I'm only worried about de-allocation.
 
-                                onReceive(copy,
+                                PARENT.onReceive(copy,
                                         addr.toString().substring(1),
-                                        in.getPort());
+                                        PARENT.in.getPort());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                        } // End of `if (in != null)`
+                        } // End of `if (PARENT.in != null)`.
 
                     } // End of `while` loop,
                 } // End of `run()`,
-            }; // End of the `Runanble` constructor!... :D!~
+            }; // End of the `Runnable` constructor!... :D!~
 
+            // GO! ":D
             this.start();
         }
 
         public static int getNumberOfReceivers() {
-            // LOL:
+            // LOL (Autocomplete moment):
             return com.brahvim.androidgamecontroller.UdpSocket.Receiver.NUMBER_OF_THREADS;
         }
 
@@ -243,10 +261,10 @@ public class UdpSocket {
                 e.printStackTrace();
             }
         }
+
     }
 
     // region Construction!~
-
     /**
      * Constructs a {@code UdpSocket} with an empty port requested from the OS, the
      * receiver thread of which will time-out every
@@ -272,7 +290,7 @@ public class UdpSocket {
     /**
      * Constructs a {@code UdpSocket} with the specified socket.
      */
-    UdpSocket(DatagramSocket p_sock) {
+    public UdpSocket(DatagramSocket p_sock) {
         this.sock = p_sock;
         this.receiver = new Receiver(this);
     }
@@ -324,6 +342,31 @@ public class UdpSocket {
         if (this.receiver == null)
             this.receiver = new Receiver(this);
         this.onStart();
+    }
+    // endregion
+
+    // region `public` and `static`!:
+    /**
+     * Tries to 'force' the OS into constructing a socket with the port specified
+     * using {@code DatagramSocket.setReuseAddress(boolean)}.
+     *
+     * @param p_port    The port to use,
+     * @param p_timeout The timeout for the port's receiving thread.
+     * @return A {@code java.net.DatagramSocket}.
+     */
+    public static DatagramSocket createSocketForcingPort(int p_port, int p_timeout) {
+        DatagramSocket ret = null;
+
+        try {
+            ret = new DatagramSocket(null);
+            ret.setReuseAddress(true);
+            ret.bind(new InetSocketAddress(p_port));
+            ret.setSoTimeout(p_timeout);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+        return ret;
     }
     // endregion
 
@@ -426,7 +469,6 @@ public class UdpSocket {
     // endregion
 
     // region Other `public` methods!:
-
     /**
      * Sends over a {@code byte[]} to the specified IP address and port.
      */
@@ -479,32 +521,6 @@ public class UdpSocket {
             // e.printStackTrace();
         }
         // System.out.println("Socket closed...");
-    }
-    // endregion
-
-    // region `static` stuff!:
-
-    /**
-     * Tries to 'force' the OS into constructing a socket with the port specified
-     * using {@code DatagramSocket.setReuseAddress(boolean)}.
-     *
-     * @param p_port    The port to use,
-     * @param p_timeout The timeout for the port's receiving thread.
-     * @return A {@code java.net.DatagramSocket}.
-     */
-    public static DatagramSocket createSocketForcingPort(int p_port, int p_timeout) {
-        DatagramSocket ret = null;
-
-        try {
-            ret = new DatagramSocket(null);
-            ret.setReuseAddress(true);
-            ret.bind(new InetSocketAddress(p_port));
-            ret.setSoTimeout(p_timeout);
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
-
-        return ret;
     }
     // endregion
 

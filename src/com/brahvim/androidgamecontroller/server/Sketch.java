@@ -202,7 +202,7 @@ public class Sketch extends PApplet {
 
                 this.config = client.getConfig();
 
-                // TODO: Remove this if issues exist.
+                // Remove this if issues exist.
                 if (this.config == null) {
                     // this.config = new AgcConfigurationPacket();
                     SKETCH.setScene(SKETCH.awaitingConnectionsScene);
@@ -211,6 +211,16 @@ public class Sketch extends PApplet {
                     // this.config.initLists();
                     SKETCH.setScene(SKETCH.awaitingConnectionsScene);
                     return;
+                }
+
+                // Clear the renderers array to avoid the "duplication" bug.
+                ServerRenderer.all.clear();
+                if (!(this.buttonRenderers == null && this.dpadButtonRenderers == null
+                        && this.thumbstickRenderers == null && this.touchpadRenderers == null)) {
+                    this.buttonRenderers.clear();
+                    this.dpadButtonRenderers.clear();
+                    this.thumbstickRenderers.clear();
+                    this.touchpadRenderers.clear();
                 }
 
                 // Renderer initialization:
@@ -478,7 +488,7 @@ public class Sketch extends PApplet {
         this.frameTime = this.frameStartTime - this.pframeTime;
         this.pframeTime = this.frameStartTime;
 
-        // Ths just needs to be here.
+        // This needs to just be here.
         // Wish I could optimize it out...
         this.sketchFrame.setBackground(this.javaBgColor);
 

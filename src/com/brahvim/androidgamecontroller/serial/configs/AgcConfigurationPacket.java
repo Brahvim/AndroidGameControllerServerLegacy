@@ -1,8 +1,5 @@
 package com.brahvim.androidgamecontroller.serial.configs;
 
-import com.brahvim.androidgamecontroller.serial.ButtonShape;
-import com.brahvim.androidgamecontroller.serial.DpadDirection;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -11,6 +8,9 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import com.brahvim.androidgamecontroller.serial.ButtonShape;
+import com.brahvim.androidgamecontroller.serial.DpadDirection;
+
 import processing.core.PVector;
 
 public class AgcConfigurationPacket implements Serializable {
@@ -18,7 +18,7 @@ public class AgcConfigurationPacket implements Serializable {
 
     public String agcVersion;
     public PVector screenDimensions;
-    public long appStartMilliSinceEpoch;
+    public long appStartMillisSinceEpoch;
 
     // Control configurations:
     public ArrayList<ButtonConfig> buttons;
@@ -27,11 +27,12 @@ public class AgcConfigurationPacket implements Serializable {
     public ArrayList<TouchpadConfig> touchpads;
 
     public AgcConfigurationPacket() {
-        // Please set `this.appStartMilliSinceEpoch` in this manner!:
-        // this.appStartMilliSinceEpoch = System.currentTimeMillis() -
-        // MainActivity.sketch.millis();
+        // Please set `this.appStartMillisSinceEpoch` in this manner!:
+        // this.appStartMillisSinceEpoch = System.currentTimeMillis() -
+        // MainActivity.sketch.millis();s
     }
 
+    // region List nullability and initialization.
     public boolean anyConfigArrayisNull() {
         return this.buttons == null &&
           this.dpadButtons == null &&
@@ -40,11 +41,11 @@ public class AgcConfigurationPacket implements Serializable {
     }
 
     public boolean anyConfigArrayisEmpty() {
-        return this.anyConfigArrayisNull()? true :
-          this.buttons.size() == 0 &&
-            this.dpadButtons.size() == 0 &&
-            this.thumbsticks.size() == 0 &&
-            this.touchpads.size() == 0;
+        return this.anyConfigArrayisNull()
+          || this.buttons.size() == 0 &&
+          this.dpadButtons.size() == 0 &&
+          this.thumbsticks.size() == 0 &&
+          this.touchpads.size() == 0;
     }
 
     public void initLists() {
@@ -60,6 +61,7 @@ public class AgcConfigurationPacket implements Serializable {
         this.thumbsticks = new ArrayList<>(p_thumbsticks);
         this.touchpads = new ArrayList<>(p_touchpads);
     }
+    // endregion
 
     // public boolean anythingIsNull() {
     // return this.anyConfigArrayisNull()
