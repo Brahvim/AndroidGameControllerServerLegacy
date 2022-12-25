@@ -84,7 +84,7 @@ public class AgcSettings {
          */
     }
 
-    public static synchronized String getSetting(String p_key) {
+    public static String getSetting(String p_key) {
         AgcSettings.refreshIfNeeded();
 
         String ret = AgcSettings.table.get(p_key);

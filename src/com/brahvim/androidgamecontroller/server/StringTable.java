@@ -93,7 +93,7 @@ public class StringTable {
         return parsedMap;
     }
 
-    public static synchronized String getString(String p_key) {
+    public static String getString(String p_key) {
         if (StringTable.table == null)
             StringTable.refresh();
 

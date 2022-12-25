@@ -2,6 +2,7 @@ package com.brahvim.androidgamecontroller.server;
 
 import java.awt.AWTException;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
@@ -22,6 +23,8 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+
+import org.intellij.lang.annotations.JdkConstants.CursorType;
 
 import com.brahvim.androidgamecontroller.RequestCode;
 import com.brahvim.androidgamecontroller.serial.ByteSerial;
@@ -492,6 +495,21 @@ public class Sketch extends PApplet {
         // Wish I could optimize it out...
         this.sketchFrame.setBackground(this.javaBgColor);
 
+        // ...`Window.class` had this!:
+        /*
+         * @Override
+         * public void setBackground(Color bgColor) {
+         * Color oldBg = getBackground();
+         * super.setBackground(bgColor);
+         * if (oldBg != null && oldBg.equals(bgColor)) {
+         * return;
+         * }
+         * // ...
+         * // ...
+         * }
+         */
+        // ...phew!
+
         // #region Window dragging logic.
         pwinMouseX = winMouseX;
         pwinMouseY = winMouseY;
@@ -524,6 +542,9 @@ public class Sketch extends PApplet {
                 winMouseY > sketchFrame.getY() &&
                 winMouseY < sketchFrame.getY() + height;
         // #endregion
+
+        if (this.mouseInWin)
+            this.sketchFrame.setCursor(Cursor.MOVE_CURSOR);
 
         // #region Push matrices, draw background, draw current scene...
         this.gr.beginDraw();

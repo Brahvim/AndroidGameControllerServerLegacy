@@ -39,66 +39,75 @@ public class TouchpadRendererForServer extends TouchpadRendererBase implements S
     public void draw(@NotNull PGraphics p_graphics) {
         // #region Robot logic.
         switch (super.config.replicationPolicy) {
-            case VELOCITY:
-                // Unnecessary and "dangerous". I know:
-                if (!super.state.pressed && super.state.ppressed)
-                    this.touchStart = null;
-
-                if (super.state.pressed && !super.state.ppressed)
-                    this.touchStart = super.state.mouse;
-
-                if (super.state.pressed) {
-                    Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
-
-                    if (this.touchStart == null)
-                        this.touchStart = new PVector(mouseLocation.x, mouseLocation.y);
-
-                    this.touchDelta = PVector.sub(super.state.mouse, this.touchStart);
-
-                    this.touchDelta.set(
-                            PApplet.map(this.touchDelta.x, 0, this.screenDimensions.x, 0, this.parentSketch.width),
-                            PApplet.map(this.touchDelta.y, 0, this.screenDimensions.y, 0, this.parentSketch.height));
-
-                    this.touchDelta.mult(super.config.sensitivity);
-
-                    this.robot.mouseMove(
-                            mouseLocation.x + (int) this.touchDelta.x,
-                            mouseLocation.y + (int) this.touchDelta.y);
-                }
-                break;
-
-            case POSITION:
-                // Unnecessary and "dangerous". I know:
-                if (!super.state.pressed && super.state.ppressed)
-                    this.touchStart = null;
-
-                if (super.state.pressed && !super.state.ppressed)
-                    this.touchStart = super.state.mouse;
-
-                if (super.state.pressed && !this.ptouchPos.equals(super.state.mouse)) {
-                    System.out.println("Touch moved!" + this.parentSketch.frameCount);
-                    Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
-
-                    if (this.touchStart == null)
-                        this.touchStart = new PVector(mouseLocation.x, mouseLocation.y);
-
-                    this.touchDelta = PVector.sub(super.state.mouse, this.touchStart);
-
-                    this.touchDelta.set(
-                            PApplet.map(this.touchDelta.x, 0, this.screenDimensions.x, 0, this.parentSketch.width),
-                            PApplet.map(this.touchDelta.y, 0, this.screenDimensions.y, 0, this.parentSketch.height));
-
-                    this.touchDelta.mult(super.config.sensitivity);
-
-                    this.robot.mouseMove(
-                            mouseLocation.x + (int) this.touchDelta.x,
-                            mouseLocation.y + (int) this.touchDelta.y);
-                }
-
-                this.ptouchPos = super.state.mouse;
-                break;
+            /*
+             * case VELOCITY:
+             * // Unnecessary and "dangerous". I know:
+             * // if (!super.state.pressed && super.state.ppressed)
+             * // this.touchStart = null;
+             * 
+             * if (super.state.pressed && !super.state.ppressed)
+             * this.touchStart = super.state.mouse;
+             * 
+             * if (super.state.pressed) {
+             * Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
+             * 
+             * if (this.touchStart == null)
+             * this.touchStart = new PVector(mouseLocation.x, mouseLocation.y);
+             * 
+             * this.touchDelta = PVector.sub(super.state.mouse, this.touchStart);
+             * 
+             * this.touchDelta.set(
+             * PApplet.map(this.touchDelta.x, 0, this.screenDimensions.x, 0,
+             * this.parentSketch.width),
+             * PApplet.map(this.touchDelta.y, 0, this.screenDimensions.y, 0,
+             * this.parentSketch.height));
+             * 
+             * this.touchDelta.mult(super.config.sensitivity);
+             * 
+             * this.robot.mouseMove(
+             * mouseLocation.x + (int) this.touchDelta.x,
+             * mouseLocation.y + (int) this.touchDelta.y);
+             * }
+             * break;
+             * 
+             * case POSITION:
+             * // Unnecessary and "dangerous". I know:
+             * if (!super.state.pressed && super.state.ppressed)
+             * this.touchStart = null;
+             * 
+             * if (super.state.pressed && !super.state.ppressed)
+             * this.touchStart = super.state.mouse;
+             * 
+             * if (super.state.pressed && !this.ptouchPos.equals(super.state.mouse)) {
+             * System.out.println("Touch moved!" + this.parentSketch.frameCount);
+             * Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
+             * 
+             * if (this.touchStart == null)
+             * this.touchStart = new PVector(mouseLocation.x, mouseLocation.y);
+             * 
+             * this.touchDelta = PVector.sub(super.state.mouse, this.touchStart);
+             * 
+             * this.touchDelta.set(
+             * PApplet.map(this.touchDelta.x, 0, this.screenDimensions.x, 0,
+             * this.parentSketch.width),
+             * PApplet.map(this.touchDelta.y, 0, this.screenDimensions.y, 0,
+             * this.parentSketch.height));
+             * 
+             * this.touchDelta.mult(super.config.sensitivity);
+             * 
+             * this.robot.mouseMove(
+             * mouseLocation.x + (int) this.touchDelta.x,
+             * mouseLocation.y + (int) this.touchDelta.y);
+             * }
+             * 
+             * this.ptouchPos = super.state.mouse;
+             * break;
+             * 
+             */
 
             default:
+                
+                break;
         }
         // #endregion
 
